@@ -15,6 +15,14 @@ import (
 
 // Color styles for the UI
 var (
+	// Box and border styles
+	mainBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("62")). // Purple border
+			Padding(1, 2).
+			MarginTop(1).
+			MarginBottom(1)
+
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("39")). // Bright blue
@@ -63,7 +71,7 @@ var (
 
 	footerStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("241")). // Dark gray
-			MarginTop(1)
+			Italic(true)
 
 	searchQueryStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("226")). // Yellow
@@ -570,86 +578,92 @@ func (m model) View() string {
 
 // renderHelpView displays keyboard shortcuts and help
 func (m model) renderHelpView() string {
-	var s string
-	s += titleStyle.Render("Task Manager - Keyboard Shortcuts") + "\n\n"
+	title := titleStyle.Render("Task Manager - Keyboard Shortcuts")
 
-	s += headerStyle.Render("LIST VIEW") + "\n"
-	s += "  " + helpKeyStyle.Render("↑/k") + "          " + helpDescStyle.Render("Move cursor up") + "\n"
-	s += "  " + helpKeyStyle.Render("↓/j") + "          " + helpDescStyle.Render("Move cursor down") + "\n"
-	s += "  " + helpKeyStyle.Render("enter") + "        " + helpDescStyle.Render("View selected task") + "\n"
-	s += "  " + helpKeyStyle.Render("/") + "            " + helpDescStyle.Render("Search/filter tasks") + "\n"
-	s += "  " + helpKeyStyle.Render("n") + "            " + helpDescStyle.Render("Create new task") + "\n"
-	s += "  " + helpKeyStyle.Render("?/h") + "          " + helpDescStyle.Render("Show this help screen") + "\n"
-	s += "  " + helpKeyStyle.Render("q") + "            " + helpDescStyle.Render("Quit application") + "\n\n"
+	var content string
+	content += headerStyle.Render("LIST VIEW") + "\n"
+	content += "  " + helpKeyStyle.Render("↑/k") + "          " + helpDescStyle.Render("Move cursor up") + "\n"
+	content += "  " + helpKeyStyle.Render("↓/j") + "          " + helpDescStyle.Render("Move cursor down") + "\n"
+	content += "  " + helpKeyStyle.Render("enter") + "        " + helpDescStyle.Render("View selected task") + "\n"
+	content += "  " + helpKeyStyle.Render("/") + "            " + helpDescStyle.Render("Search/filter tasks") + "\n"
+	content += "  " + helpKeyStyle.Render("n") + "            " + helpDescStyle.Render("Create new task") + "\n"
+	content += "  " + helpKeyStyle.Render("?/h") + "          " + helpDescStyle.Render("Show this help screen") + "\n"
+	content += "  " + helpKeyStyle.Render("q") + "            " + helpDescStyle.Render("Quit application") + "\n\n"
 
-	s += headerStyle.Render("SEARCH MODE") + "\n"
-	s += "  " + helpKeyStyle.Render("[type]") + "       " + helpDescStyle.Render("Filter tasks (searches name, title, status, tags)") + "\n"
-	s += "  " + helpKeyStyle.Render("↑/k, ↓/j") + "     " + helpDescStyle.Render("Navigate filtered results") + "\n"
-	s += "  " + helpKeyStyle.Render("enter") + "        " + helpDescStyle.Render("View selected task") + "\n"
-	s += "  " + helpKeyStyle.Render("backspace") + "    " + helpDescStyle.Render("Delete last character") + "\n"
-	s += "  " + helpKeyStyle.Render("esc") + "          " + helpDescStyle.Render("Exit search mode") + "\n\n"
+	content += headerStyle.Render("SEARCH MODE") + "\n"
+	content += "  " + helpKeyStyle.Render("[type]") + "       " + helpDescStyle.Render("Filter tasks (searches name, title, status, tags)") + "\n"
+	content += "  " + helpKeyStyle.Render("↑/k, ↓/j") + "     " + helpDescStyle.Render("Navigate filtered results") + "\n"
+	content += "  " + helpKeyStyle.Render("enter") + "        " + helpDescStyle.Render("View selected task") + "\n"
+	content += "  " + helpKeyStyle.Render("backspace") + "    " + helpDescStyle.Render("Delete last character") + "\n"
+	content += "  " + helpKeyStyle.Render("esc") + "          " + helpDescStyle.Render("Exit search mode") + "\n\n"
 
-	s += headerStyle.Render("TASK VIEW") + "\n"
-	s += "  " + helpKeyStyle.Render("e") + "            " + helpDescStyle.Render("Edit task in $EDITOR") + "\n"
-	s += "  " + helpKeyStyle.Render("d") + "            " + helpDescStyle.Render("Delete task (with confirmation)") + "\n"
-	s += "  " + helpKeyStyle.Render("esc") + "          " + helpDescStyle.Render("Return to list") + "\n"
-	s += "  " + helpKeyStyle.Render("q") + "            " + helpDescStyle.Render("Quit application") + "\n\n"
+	content += headerStyle.Render("TASK VIEW") + "\n"
+	content += "  " + helpKeyStyle.Render("e") + "            " + helpDescStyle.Render("Edit task in $EDITOR") + "\n"
+	content += "  " + helpKeyStyle.Render("d") + "            " + helpDescStyle.Render("Delete task (with confirmation)") + "\n"
+	content += "  " + helpKeyStyle.Render("esc") + "          " + helpDescStyle.Render("Return to list") + "\n"
+	content += "  " + helpKeyStyle.Render("q") + "            " + helpDescStyle.Render("Quit application") + "\n\n"
 
-	s += headerStyle.Render("DELETE CONFIRMATION") + "\n"
-	s += "  " + helpKeyStyle.Render("y") + "            " + helpDescStyle.Render("Confirm deletion") + "\n"
-	s += "  " + helpKeyStyle.Render("n/esc") + "        " + helpDescStyle.Render("Cancel deletion") + "\n\n"
+	content += headerStyle.Render("DELETE CONFIRMATION") + "\n"
+	content += "  " + helpKeyStyle.Render("y") + "            " + helpDescStyle.Render("Confirm deletion") + "\n"
+	content += "  " + helpKeyStyle.Render("n/esc") + "        " + helpDescStyle.Render("Cancel deletion") + "\n\n"
 
-	s += headerStyle.Render("CONFIGURATION") + "\n"
-	s += "  " + helpDescStyle.Render("Config: ~/.config/taskmanager/config.toml") + "\n"
-	s += "  " + helpDescStyle.Render("Customize directories, status indicators, and more") + "\n\n"
+	content += headerStyle.Render("CONFIGURATION") + "\n"
+	content += "  " + helpDescStyle.Render("Config: ~/.config/taskmanager/config.toml") + "\n"
+	content += "  " + helpDescStyle.Render("Customize directories, status indicators, and more") + "\n\n"
 
-	s += footerStyle.Render("esc: close help • q: quit") + "\n"
+	content += footerStyle.Render("esc: close help • q: quit")
 
-	return s
+	return title + "\n" + mainBoxStyle.Render(content)
 }
 
 // renderDeleteConfirmation shows a confirmation dialog for deleting a task
 func (m model) renderDeleteConfirmation() string {
-	s := "Delete Task\n"
-	s += "======================\n\n"
+	title := titleStyle.Render("Delete Task")
 
+	var content string
 	if m.cursor < len(m.tasks) {
-		s += fmt.Sprintf("Are you sure you want to delete this task?\n\n")
-		s += fmt.Sprintf("File: %s\n", m.tasks[m.cursor].name)
+		content += "Are you sure you want to delete this task?\n\n"
+		content += fmt.Sprintf("File: %s\n", m.tasks[m.cursor].name)
 		if m.tasks[m.cursor].metadata.Title != "" {
-			s += fmt.Sprintf("Title: %s\n", m.tasks[m.cursor].metadata.Title)
+			content += fmt.Sprintf("Title: %s\n", m.tasks[m.cursor].metadata.Title)
 		}
-		s += fmt.Sprintf("Path: %s\n", m.tasks[m.cursor].fullPath)
+		content += fmt.Sprintf("Path: %s\n", m.tasks[m.cursor].fullPath)
 	}
 
-	s += "\n----------------------\n"
-	s += "This action cannot be undone!\n\n"
-	s += "y: yes, delete • esc/n: cancel • q: quit\n"
+	content += "\n" + errorStyle.Render("This action cannot be undone!") + "\n\n"
+	content += footerStyle.Render("y: yes, delete • esc/n: cancel • q: quit")
 
-	return s
+	return title + "\n" + mainBoxStyle.Render(content)
 }
 
 // renderTaskView displays the content of a single task
 func (m model) renderTaskView() string {
-	s := "Task Viewer\n"
-	s += "======================\n\n"
-
+	var title string
 	if m.cursor < len(m.tasks) {
-		s += fmt.Sprintf("File: %s\n", m.tasks[m.cursor].name)
-		s += fmt.Sprintf("Path: %s\n", m.tasks[m.cursor].fullPath)
-		s += "----------------------\n\n"
+		if m.tasks[m.cursor].metadata.Title != "" {
+			title = titleStyle.Render(m.tasks[m.cursor].metadata.Title)
+		} else {
+			title = titleStyle.Render(m.tasks[m.cursor].name)
+		}
+	} else {
+		title = titleStyle.Render("Task Viewer")
 	}
 
-	s += m.taskContent
-	s += "\n\n----------------------\n"
-	s += "esc: back • e: edit • d: delete • q: quit\n"
+	var content string
+	if m.cursor < len(m.tasks) {
+		content += dimStyle.Render(fmt.Sprintf("File: %s", m.tasks[m.cursor].name)) + "\n"
+		content += dimStyle.Render(fmt.Sprintf("Path: %s", m.tasks[m.cursor].fullPath)) + "\n\n"
+	}
 
-	return s
+	content += m.taskContent + "\n\n"
+	content += footerStyle.Render("esc: back • e: edit • d: delete • q: quit")
+
+	return title + "\n" + mainBoxStyle.Render(content)
 }
 
 // renderListView displays the list of tasks
 func (m model) renderListView() string {
-	// Build the UI string
+	// Build the title
 	var title string
 	if m.mode == searchMode {
 		if m.searchQuery == "" {
@@ -662,17 +676,16 @@ func (m model) renderListView() string {
 	} else {
 		title = titleStyle.Render(fmt.Sprintf("Task Manager - %d directories", len(m.configDirs)))
 	}
-	s := title + "\n"
 
 	// If there was an error loading tasks, display it
 	if m.err != nil {
-		s += errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + "\n\n"
-		s += "Make sure the configured directories exist:\n"
+		content := errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + "\n\n"
+		content += "Make sure the configured directories exist:\n"
 		for _, dir := range m.configDirs {
-			s += fmt.Sprintf("  - %s\n", dir)
+			content += fmt.Sprintf("  - %s\n", dir)
 		}
-		s += footerStyle.Render("\nPress 'q' to quit") + "\n"
-		return s
+		content += footerStyle.Render("\nPress 'q' to quit")
+		return title + "\n" + mainBoxStyle.Render(content)
 	}
 
 	// Get visible tasks (filtered or all)
@@ -680,21 +693,24 @@ func (m model) renderListView() string {
 
 	// If no tasks found, show a helpful message
 	if len(m.tasks) == 0 {
-		s += "No markdown files found in:\n"
+		content := "No markdown files found in:\n"
 		for _, dir := range m.configDirs {
-			s += fmt.Sprintf("  - %s\n", dir)
+			content += fmt.Sprintf("  - %s\n", dir)
 		}
-		s += "\nAdd some .md files to get started!\n"
-		s += "\nPress 'q' to quit\n"
-		return s
+		content += "\nAdd some .md files to get started!\n"
+		content += "\nPress 'q' to quit"
+		return title + "\n" + mainBoxStyle.Render(content)
 	}
 
 	// If in search mode and no results
 	if m.mode == searchMode && len(visibleTasks) == 0 {
-		s += "No tasks match your search.\n"
-		s += "\nesc: clear search • q: quit\n"
-		return s
+		content := "No tasks match your search.\n\n"
+		content += "esc: clear search • q: quit"
+		return title + "\n" + mainBoxStyle.Render(content)
 	}
+
+	// Build task list content
+	var content string
 
 	// Render each visible task in our list
 	for i, task := range visibleTasks {
@@ -757,12 +773,13 @@ func (m model) renderListView() string {
 			row += fmt.Sprintf("  [%s]", task.sourceDir)
 		}
 
-		s += row + "\n"
+		content += row + "\n"
 	}
 
-	// Footer with instructions
-	s += "\n"
+	// Add spacer before footer
+	content += "\n"
 
+	// Footer with instructions
 	var footer string
 	if m.mode == searchMode {
 		footer = fmt.Sprintf("Showing %d of %d tasks", len(visibleTasks), len(m.tasks))
@@ -772,11 +789,11 @@ func (m model) renderListView() string {
 		if len(m.configDirs) > 1 {
 			footer += fmt.Sprintf(" from %d directories", len(m.configDirs))
 		}
-		footer += " • / search • ↑/k up • ↓/j down • enter view • n new • ?: help • q quit"
+		footer += " • /: search • ↑/k: up • ↓/j: down • enter: view • n: new • ?: help • q: quit"
 	}
-	s += footerStyle.Render(footer) + "\n"
+	content += footerStyle.Render(footer)
 
-	return s
+	return title + "\n" + mainBoxStyle.Render(content)
 }
 
 func main() {
