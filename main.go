@@ -10,6 +10,67 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+// Color styles for the UI
+var (
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("39")). // Bright blue
+			MarginBottom(1)
+
+	headerStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("205")). // Pink
+			Underline(true)
+
+	cursorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("226")). // Yellow
+			Bold(true)
+
+	statusTodoStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("245")) // Gray
+
+	statusInProgressStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("214")). // Orange
+				Bold(true)
+
+	statusDoneStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("78")). // Green
+			Bold(true)
+
+	priorityHighStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("196")). // Red
+				Bold(true)
+
+	priorityMediumStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("214")) // Orange
+
+	priorityLowStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("245")) // Gray
+
+	errorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("196")). // Red
+			Bold(true)
+
+	helpKeyStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("39")). // Bright blue
+			Bold(true)
+
+	helpDescStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("252")) // Light gray
+
+	footerStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")). // Dark gray
+			MarginTop(1)
+
+	searchQueryStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("226")). // Yellow
+				Bold(true)
+
+	dimStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240")) // Very dark gray
 )
 
 // reloadTasksMsg is sent when we need to reload the task list
@@ -509,41 +570,40 @@ func (m model) View() string {
 
 // renderHelpView displays keyboard shortcuts and help
 func (m model) renderHelpView() string {
-	s := "Task Manager - Keyboard Shortcuts\n"
-	s += "======================\n\n"
+	var s string
+	s += titleStyle.Render("Task Manager - Keyboard Shortcuts") + "\n\n"
 
-	s += "LIST VIEW\n"
-	s += "  ↑/k          Move cursor up\n"
-	s += "  ↓/j          Move cursor down\n"
-	s += "  enter        View selected task\n"
-	s += "  /            Search/filter tasks\n"
-	s += "  n            Create new task\n"
-	s += "  ?/h          Show this help screen\n"
-	s += "  q            Quit application\n\n"
+	s += headerStyle.Render("LIST VIEW") + "\n"
+	s += "  " + helpKeyStyle.Render("↑/k") + "          " + helpDescStyle.Render("Move cursor up") + "\n"
+	s += "  " + helpKeyStyle.Render("↓/j") + "          " + helpDescStyle.Render("Move cursor down") + "\n"
+	s += "  " + helpKeyStyle.Render("enter") + "        " + helpDescStyle.Render("View selected task") + "\n"
+	s += "  " + helpKeyStyle.Render("/") + "            " + helpDescStyle.Render("Search/filter tasks") + "\n"
+	s += "  " + helpKeyStyle.Render("n") + "            " + helpDescStyle.Render("Create new task") + "\n"
+	s += "  " + helpKeyStyle.Render("?/h") + "          " + helpDescStyle.Render("Show this help screen") + "\n"
+	s += "  " + helpKeyStyle.Render("q") + "            " + helpDescStyle.Render("Quit application") + "\n\n"
 
-	s += "SEARCH MODE\n"
-	s += "  [type]       Filter tasks (searches name, title, status, tags)\n"
-	s += "  ↑/k, ↓/j     Navigate filtered results\n"
-	s += "  enter        View selected task\n"
-	s += "  backspace    Delete last character\n"
-	s += "  esc          Exit search mode\n\n"
+	s += headerStyle.Render("SEARCH MODE") + "\n"
+	s += "  " + helpKeyStyle.Render("[type]") + "       " + helpDescStyle.Render("Filter tasks (searches name, title, status, tags)") + "\n"
+	s += "  " + helpKeyStyle.Render("↑/k, ↓/j") + "     " + helpDescStyle.Render("Navigate filtered results") + "\n"
+	s += "  " + helpKeyStyle.Render("enter") + "        " + helpDescStyle.Render("View selected task") + "\n"
+	s += "  " + helpKeyStyle.Render("backspace") + "    " + helpDescStyle.Render("Delete last character") + "\n"
+	s += "  " + helpKeyStyle.Render("esc") + "          " + helpDescStyle.Render("Exit search mode") + "\n\n"
 
-	s += "TASK VIEW\n"
-	s += "  e            Edit task in $EDITOR\n"
-	s += "  d            Delete task (with confirmation)\n"
-	s += "  esc          Return to list\n"
-	s += "  q            Quit application\n\n"
+	s += headerStyle.Render("TASK VIEW") + "\n"
+	s += "  " + helpKeyStyle.Render("e") + "            " + helpDescStyle.Render("Edit task in $EDITOR") + "\n"
+	s += "  " + helpKeyStyle.Render("d") + "            " + helpDescStyle.Render("Delete task (with confirmation)") + "\n"
+	s += "  " + helpKeyStyle.Render("esc") + "          " + helpDescStyle.Render("Return to list") + "\n"
+	s += "  " + helpKeyStyle.Render("q") + "            " + helpDescStyle.Render("Quit application") + "\n\n"
 
-	s += "DELETE CONFIRMATION\n"
-	s += "  y            Confirm deletion\n"
-	s += "  n/esc        Cancel deletion\n\n"
+	s += headerStyle.Render("DELETE CONFIRMATION") + "\n"
+	s += "  " + helpKeyStyle.Render("y") + "            " + helpDescStyle.Render("Confirm deletion") + "\n"
+	s += "  " + helpKeyStyle.Render("n/esc") + "        " + helpDescStyle.Render("Cancel deletion") + "\n\n"
 
-	s += "CONFIGURATION\n"
-	s += "  Config: ~/.config/taskmanager/config.toml\n"
-	s += "  Customize directories, status indicators, and more\n\n"
+	s += headerStyle.Render("CONFIGURATION") + "\n"
+	s += "  " + helpDescStyle.Render("Config: ~/.config/taskmanager/config.toml") + "\n"
+	s += "  " + helpDescStyle.Render("Customize directories, status indicators, and more") + "\n\n"
 
-	s += "----------------------\n"
-	s += "esc: close help • q: quit\n"
+	s += footerStyle.Render("esc: close help • q: quit") + "\n"
 
 	return s
 }
@@ -592,26 +652,26 @@ func (m model) renderListView() string {
 	// Build the UI string
 	var title string
 	if m.mode == searchMode {
-		title = fmt.Sprintf("Search: %s", m.searchQuery)
 		if m.searchQuery == "" {
-			title = "Search (type to filter)"
+			title = titleStyle.Render("Search (type to filter)")
+		} else {
+			title = titleStyle.Render("Search: ") + searchQueryStyle.Render(m.searchQuery)
 		}
 	} else if len(m.configDirs) == 1 {
-		title = fmt.Sprintf("Task Manager - %s", m.configDirs[0])
+		title = titleStyle.Render(fmt.Sprintf("Task Manager - %s", m.configDirs[0]))
 	} else {
-		title = fmt.Sprintf("Task Manager - %d directories", len(m.configDirs))
+		title = titleStyle.Render(fmt.Sprintf("Task Manager - %d directories", len(m.configDirs)))
 	}
 	s := title + "\n"
-	s += "======================\n\n"
 
 	// If there was an error loading tasks, display it
 	if m.err != nil {
-		s += fmt.Sprintf("Error: %v\n\n", m.err)
+		s += errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + "\n\n"
 		s += "Make sure the configured directories exist:\n"
 		for _, dir := range m.configDirs {
 			s += fmt.Sprintf("  - %s\n", dir)
 		}
-		s += "\nPress 'q' to quit\n"
+		s += footerStyle.Render("\nPress 'q' to quit") + "\n"
 		return s
 	}
 
@@ -639,9 +699,11 @@ func (m model) renderListView() string {
 	// Render each visible task in our list
 	for i, task := range visibleTasks {
 		// Is the cursor pointing at this task?
-		cursor := " " // no cursor
+		var cursor string
 		if m.cursor == i {
-			cursor = ">" // cursor!
+			cursor = cursorStyle.Render(">") // cursor!
+		} else {
+			cursor = " " // no cursor
 		}
 
 		// Get status, using default if not set
@@ -650,13 +712,32 @@ func (m model) renderListView() string {
 			status = m.config.GetDefaultStatus()
 		}
 
-		// Status indicator (if available)
+		// Status indicator with color
 		statusIndicator := m.config.GetStatusIndicator(status)
+		var styledStatus string
+		switch strings.ToLower(status) {
+		case "done", "completed":
+			styledStatus = statusDoneStyle.Render(statusIndicator)
+		case "in-progress", "doing":
+			styledStatus = statusInProgressStyle.Render(statusIndicator)
+		default:
+			styledStatus = statusTodoStyle.Render(statusIndicator)
+		}
 
-		// Priority emoji (if available)
+		// Priority with color
 		priorityEmoji := getPriorityEmoji(task.metadata.Priority)
+		var styledPriority string
 		if priorityEmoji != "" {
-			priorityEmoji = priorityEmoji + " "
+			switch strings.ToLower(task.metadata.Priority) {
+			case "high":
+				styledPriority = priorityHighStyle.Render(priorityEmoji) + " "
+			case "medium":
+				styledPriority = priorityMediumStyle.Render(priorityEmoji) + " "
+			case "low":
+				styledPriority = priorityLowStyle.Render(priorityEmoji) + " "
+			default:
+				styledPriority = priorityEmoji + " "
+			}
 		}
 
 		// Use title from frontmatter if available, otherwise use filename
@@ -666,10 +747,10 @@ func (m model) renderListView() string {
 		}
 
 		// Format the modification time nicely
-		modTime := task.modTime.Format("2006-01-02 15:04")
+		modTime := dimStyle.Render(task.modTime.Format("2006-01-02 15:04"))
 
 		// Build the row with status and priority
-		row := fmt.Sprintf("%s %s %s%-40s  %s", cursor, statusIndicator, priorityEmoji, displayName, modTime)
+		row := fmt.Sprintf("%s %s %s%-40s  %s", cursor, styledStatus, styledPriority, displayName, modTime)
 
 		// If we have multiple directories, show which one this task is from
 		if m.showDirInfo {
@@ -682,16 +763,18 @@ func (m model) renderListView() string {
 	// Footer with instructions
 	s += "\n"
 
+	var footer string
 	if m.mode == searchMode {
-		s += fmt.Sprintf("Showing %d of %d tasks", len(visibleTasks), len(m.tasks))
-		s += " • esc: clear search • enter: view • ?: help • q: quit\n"
+		footer = fmt.Sprintf("Showing %d of %d tasks", len(visibleTasks), len(m.tasks))
+		footer += " • esc: clear search • enter: view • ?: help • q: quit"
 	} else {
-		s += fmt.Sprintf("Showing %d tasks", len(m.tasks))
+		footer = fmt.Sprintf("Showing %d tasks", len(m.tasks))
 		if len(m.configDirs) > 1 {
-			s += fmt.Sprintf(" from %d directories", len(m.configDirs))
+			footer += fmt.Sprintf(" from %d directories", len(m.configDirs))
 		}
-		s += " • / search • ↑/k up • ↓/j down • enter view • n new • ?: help • q quit\n"
+		footer += " • / search • ↑/k up • ↓/j down • enter view • n new • ?: help • q quit"
 	}
+	s += footerStyle.Render(footer) + "\n"
 
 	return s
 }
