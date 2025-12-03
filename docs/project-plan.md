@@ -120,15 +120,23 @@ A TUI (Terminal User Interface) application built with Go and Bubble Tea for man
 **Goal**: Polish and additional features
 
 **Tasks**:
-- [ ] Search/filter functionality
+- [x] Search/filter functionality
 - [ ] Task completion tracking
-- [ ] Keyboard shortcuts reference
+- [x] Keyboard shortcuts reference
 - [ ] Color theming
 - [ ] Performance optimization for large task lists
 
 **Deliverables**:
 - Production-ready task manager
 - Comprehensive documentation
+
+**Completed Features**:
+- Real-time search/filter with `/` key
+- Search across filename, title, status, and tags
+- Case-insensitive matching with live results
+- Help screen (`?` or `h`) with all keyboard shortcuts
+- Organized by context (List View, Search Mode, Task View, etc.)
+- Makes the app more discoverable and user-friendly
 
 ## Configuration File Structure
 
