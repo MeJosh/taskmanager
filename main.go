@@ -196,19 +196,30 @@ func embedTitleInBorder(box string, title string) string {
 	// Format title with brackets and styling
 	formattedTitle := boxTitleStyle.Render("[" + title + "]")
 
-	// Get the top border line
+	// Get the top border line as runes to properly handle Unicode
 	borderLine := lines[0]
-	if len(borderLine) < 4 {
+	borderRunes := []rune(borderLine)
+	if len(borderRunes) < 4 {
 		return box
 	}
 
 	// Insert title after the first corner character
-	// Keep the corner, add title, then continue with the border
 	titleWithSpaces := " " + formattedTitle + " "
+	titleRunes := []rune(titleWithSpaces)
+
+	// Calculate how many border characters to keep after the title
+	remainingBorderLength := len(borderRunes) - len(titleRunes) - 1
+	if remainingBorderLength < 1 {
+		remainingBorderLength = 1
+	}
 
 	// Build new top border: corner + title + remaining border characters
-	lines[0] = string(borderLine[0]) + titleWithSpaces + borderLine[len(titleWithSpaces)+1:]
+	newBorder := string(borderRunes[0]) + titleWithSpaces
+	if len(borderRunes) > len(titleRunes)+1 {
+		newBorder += string(borderRunes[len(titleRunes)+1:])
+	}
 
+	lines[0] = newBorder
 	return strings.Join(lines, "\n")
 }
 
