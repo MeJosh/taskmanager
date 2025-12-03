@@ -840,43 +840,36 @@ func (m model) renderListView() string {
 		content += row + "\n"
 	}
 
-	// Calculate how much height we have available
-	// Account for: search title (if present), box title, dir box, dir box title, footer
-	usedHeight := 0
-	if m.mode == searchMode {
-		usedHeight += 2 // search title + spacing
-	}
-	usedHeight += 1 // Tasks box title
-	usedHeight += 4 // Tasks box border (top + bottom) + padding
-	usedHeight += 1 // Directories box title
-	
-	// Calculate directory box height
-	dirLines := 1 // At least one line
+	// Calculate directory box height first
+	dirLines := 1 // At least one line for single directory
 	if len(m.configDirs) > 1 {
 		dirLines = len(m.configDirs)
 	}
-	usedHeight += dirLines + 2 // dir content + border
-	usedHeight += 2 // footer + spacing
+	dirBoxHeight := dirLines + 2 // content + top/bottom border
 
-	// Count current content lines
-	contentLines := strings.Count(content, "\n")
-	
-	// Calculate available height for tasks box
-	availableHeight := m.height - usedHeight
-	if availableHeight < 0 {
-		availableHeight = 0
+	// Calculate total used height
+	usedHeight := 0
+	if m.mode == searchMode {
+		usedHeight += 2 // search title + margin
+	}
+	usedHeight += 1             // Tasks box title
+	usedHeight += 2             // Tasks box top/bottom border
+	usedHeight += 2             // Tasks box padding (1 top + 1 bottom)
+	usedHeight += 1             // Directories box title
+	usedHeight += dirBoxHeight  // Directories box
+	usedHeight += 1             // footer
+
+	// Calculate available height for task content inside the box
+	tasksBoxContentHeight := m.height - usedHeight
+	if tasksBoxContentHeight < 1 {
+		tasksBoxContentHeight = 1
 	}
 
-	// Add padding to fill remaining space
-	if contentLines < availableHeight {
-		paddingNeeded := availableHeight - contentLines
-		for i := 0; i < paddingNeeded; i++ {
-			content += "\n"
-		}
-	}
+	// Set explicit height for the tasks box
+	tasksBoxStyle := mainBoxStyle.Height(tasksBoxContentHeight)
 
 	// Add the task list box with title
-	box := mainBoxStyle.Render(strings.TrimRight(content, "\n"))
+	box := tasksBoxStyle.Render(strings.TrimRight(content, "\n"))
 	boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
 		boxTitleStyle.Render("Tasks"),
 		box,
