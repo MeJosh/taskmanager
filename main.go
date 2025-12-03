@@ -492,10 +492,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.cursor++
 				}
 
-			case "?", "h":
-				// Show help screen
-				m.mode = helpMode
-
 			case "ctrl+c":
 				return m, tea.Quit
 
