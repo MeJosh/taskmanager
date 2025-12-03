@@ -226,7 +226,7 @@ func embedTitleInBorder(box string, title string) string {
 	leftCorner := borderCharStyle.Render("╭")
 	rightCorner := borderCharStyle.Render("╮")
 	horizontalLine := borderCharStyle.Render(strings.Repeat("─", charsNeeded-1))
-	
+
 	lines[0] = leftCorner + titleWithSpaces + horizontalLine + rightCorner
 
 	return strings.Join(lines, "\n")
@@ -675,6 +675,9 @@ func (m model) View() string {
 func (m model) renderHelpView() string {
 	var sections []string
 
+	// Add top padding
+	sections = append(sections, "")
+
 	title := titleStyle.Render("Keyboard Shortcuts")
 	sections = append(sections, title)
 
@@ -709,7 +712,10 @@ func (m model) renderHelpView() string {
 	content += "  " + helpDescStyle.Render("Config: ~/.config/taskmanager/config.toml") + "\n"
 	content += "  " + helpDescStyle.Render("Customize directories, status indicators, and more")
 
-	sections = append(sections, mainBoxStyle.Render(content))
+	sections = append(sections, mainBoxStyle.
+		MarginLeft(1).
+		MarginRight(1).
+		Render(content))
 	sections = append(sections, footerStyle.Render("esc: close help • q: quit"))
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -718,6 +724,9 @@ func (m model) renderHelpView() string {
 // renderDeleteConfirmation shows a confirmation dialog for deleting a task
 func (m model) renderDeleteConfirmation() string {
 	var sections []string
+
+	// Add top padding
+	sections = append(sections, "")
 
 	title := titleStyle.Render("Delete Task")
 	sections = append(sections, title)
@@ -734,7 +743,10 @@ func (m model) renderDeleteConfirmation() string {
 
 	content += "\n" + errorStyle.Render("This action cannot be undone!")
 
-	sections = append(sections, mainBoxStyle.Render(content))
+	sections = append(sections, mainBoxStyle.
+		MarginLeft(1).
+		MarginRight(1).
+		Render(content))
 	sections = append(sections, footerStyle.Render("y: yes, delete • esc/n: cancel • q: quit"))
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -743,6 +755,9 @@ func (m model) renderDeleteConfirmation() string {
 // renderTaskView displays the content of a single task
 func (m model) renderTaskView() string {
 	var sections []string
+
+	// Add top padding
+	sections = append(sections, "")
 
 	var title string
 	if m.cursor < len(m.tasks) {
@@ -764,7 +779,10 @@ func (m model) renderTaskView() string {
 
 	content += m.taskContent
 
-	sections = append(sections, mainBoxStyle.Render(content))
+	sections = append(sections, mainBoxStyle.
+		MarginLeft(1).
+		MarginRight(1).
+		Render(content))
 	sections = append(sections, footerStyle.Render("esc: back • e: edit • d: delete • q: quit"))
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -773,6 +791,9 @@ func (m model) renderTaskView() string {
 // renderListView displays the list of tasks
 func (m model) renderListView() string {
 	var sections []string
+
+	// Add top padding
+	sections = append(sections, "")
 
 	// Show search box if in search mode
 	if m.mode == searchMode {
@@ -785,7 +806,9 @@ func (m model) renderListView() string {
 
 		// Make search box full width with embedded title
 		searchBoxWithTitle := searchBoxStyle.
-			Width(m.width - 4)
+			Width(m.width - 6). // Reduced from 4 to 6 for balanced padding
+			MarginLeft(1).
+			MarginRight(1)
 
 		searchBox := searchBoxWithTitle.Render(searchContent)
 		searchBox = embedTitleInBorder(searchBox, "Search")
@@ -799,7 +822,10 @@ func (m model) renderListView() string {
 		}
 
 		// Add box with title embedded in border
-		box := mainBoxStyle.Render(content)
+		box := mainBoxStyle.
+			MarginLeft(1).
+			MarginRight(1).
+			Render(content)
 		box = embedTitleInBorder(box, "Tasks")
 		sections = append(sections, box)
 		sections = append(sections, footerStyle.Render("q: quit"))
@@ -815,7 +841,10 @@ func (m model) renderListView() string {
 		content += "Add some .md files to get started!"
 
 		// Add tasks box with title embedded in border
-		box := mainBoxStyle.Render(content)
+		box := mainBoxStyle.
+			MarginLeft(1).
+			MarginRight(1).
+			Render(content)
 		box = embedTitleInBorder(box, "Tasks")
 		sections = append(sections, box)
 
@@ -824,7 +853,10 @@ func (m model) renderListView() string {
 		for _, dir := range m.configDirs {
 			dirContent += fmt.Sprintf("• %s\n", dir)
 		}
-		dirBox := dirBoxStyle.Render(strings.TrimSpace(dirContent))
+		dirBox := dirBoxStyle.
+			MarginLeft(1).
+			MarginRight(1).
+			Render(strings.TrimSpace(dirContent))
 		dirBox = embedTitleInBorder(dirBox, "Directories")
 		sections = append(sections, dirBox)
 
@@ -835,7 +867,10 @@ func (m model) renderListView() string {
 	// If in search mode and no results
 	if m.mode == searchMode && len(visibleTasks) == 0 {
 		content := "No tasks match your search."
-		box := mainBoxStyle.Render(content)
+		box := mainBoxStyle.
+			MarginLeft(1).
+			MarginRight(1).
+			Render(content)
 		box = embedTitleInBorder(box, "Tasks")
 		sections = append(sections, box)
 		sections = append(sections, footerStyle.Render("esc: clear search • q: quit"))
@@ -918,13 +953,14 @@ func (m model) renderListView() string {
 
 	// Calculate total used height
 	usedHeight := 0
+	usedHeight += 1 // Top padding
 	if m.mode == searchMode {
 		usedHeight += 3 // Search box (content + top/bottom border, title embedded)
 	}
 	usedHeight += 2            // Tasks box top/bottom border (title embedded)
 	usedHeight += 2            // Tasks box padding (1 top + 1 bottom)
 	usedHeight += dirBoxHeight // Directories box (title embedded)
-	usedHeight += 1            // footer
+	usedHeight += 1            // footer (no extra bottom padding)
 
 	// Calculate available height for task content inside the box
 	tasksBoxContentHeight := m.height - usedHeight
@@ -933,7 +969,10 @@ func (m model) renderListView() string {
 	}
 
 	// Set explicit height for the tasks box
-	tasksBoxStyle := mainBoxStyle.Height(tasksBoxContentHeight)
+	tasksBoxStyle := mainBoxStyle.
+		Height(tasksBoxContentHeight).
+		MarginLeft(1).
+		MarginRight(1)
 
 	// Add the task list box with title embedded in border
 	box := tasksBoxStyle.Render(strings.TrimRight(content, "\n"))
@@ -950,7 +989,10 @@ func (m model) renderListView() string {
 		}
 		dirContent = strings.TrimRight(dirContent, "\n")
 	}
-	dirBox := dirBoxStyle.Render(dirContent)
+	dirBox := dirBoxStyle.
+		MarginLeft(1).
+		MarginRight(1).
+		Render(dirContent)
 	dirBox = embedTitleInBorder(dirBox, "Directories")
 	sections = append(sections, dirBox)
 
