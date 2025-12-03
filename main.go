@@ -193,33 +193,35 @@ func embedTitleInBorder(box string, title string) string {
 		return box
 	}
 
-	// Format title with brackets and styling
-	formattedTitle := boxTitleStyle.Render("[" + title + "]")
+	// Format title with brackets
+	formattedTitle := "[" + title + "]"
 
-	// Get the top border line as runes to properly handle Unicode
+	// Get the visible width of the rendered title (excluding ANSI codes)
+	renderedTitle := boxTitleStyle.Render(formattedTitle)
+	titleWidth := lipgloss.Width(renderedTitle)
+
+	// Get the top border line
 	borderLine := lines[0]
-	borderRunes := []rune(borderLine)
-	if len(borderRunes) < 4 {
-		return box
+	borderWidth := lipgloss.Width(borderLine)
+
+	if borderWidth < titleWidth+4 {
+		return box // Not enough space
 	}
 
-	// Insert title after the first corner character
-	titleWithSpaces := " " + formattedTitle + " "
-	titleRunes := []rune(titleWithSpaces)
+	// Build the new top line by overlaying the title
+	// We want: "╭ [Title] ─────────────╮"
+	//          corner + space + title + space + borders + corner
 
-	// Calculate how many border characters to keep after the title
-	remainingBorderLength := len(borderRunes) - len(titleRunes) - 1
-	if remainingBorderLength < 1 {
-		remainingBorderLength = 1
-	}
+	// Use lipgloss to place the title at position 1 (after corner)
+	titleWithSpaces := " " + renderedTitle + " "
 
-	// Build new top border: corner + title + remaining border characters
-	newBorder := string(borderRunes[0]) + titleWithSpaces
-	if len(borderRunes) > len(titleRunes)+1 {
-		newBorder += string(borderRunes[len(titleRunes)+1:])
-	}
+	// Calculate how many border chars we need after title
+	charsNeeded := borderWidth - lipgloss.Width(titleWithSpaces) - 1 // -1 for the corner at start
 
-	lines[0] = newBorder
+	// Construct the new top border line
+	// Format: ╭ [Title] ─────────╮
+	lines[0] = "╭" + titleWithSpaces + strings.Repeat("─", charsNeeded-1) + "╮"
+
 	return strings.Join(lines, "\n")
 }
 
@@ -774,12 +776,14 @@ func (m model) renderListView() string {
 			searchContent = searchPrefixStyle.Render("/ ") + m.searchQuery
 		}
 
-		// Make search box full width
-		searchBoxFullWidth := searchBoxStyle.Width(m.width - 4)
-		searchBox := searchBoxFullWidth.Render(searchContent)
+		// Make search box full width with embedded title
+		searchBoxWithTitle := searchBoxStyle.
+			Width(m.width - 4)
+
+		searchBox := searchBoxWithTitle.Render(searchContent)
 		searchBox = embedTitleInBorder(searchBox, "Search")
 		sections = append(sections, searchBox)
-	}	// If there was an error loading tasks, display it
+	} // If there was an error loading tasks, display it
 	if m.err != nil {
 		content := errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + "\n\n"
 		content += "Make sure the configured directories exist:\n"
