@@ -40,21 +40,21 @@ func (m model) Init() tea.Cmd {
 // This is where we handle user input and update our model
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	
+
 	// Is it a key press?
 	case tea.KeyMsg:
 		switch msg.String() {
-		
+
 		// Quit keys
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		
+
 		// Move up
 		case "up", "k":
 			if m.cursor > 0 {
 				m.cursor--
 			}
-		
+
 		// Move down
 		case "down", "j":
 			if m.cursor < len(m.tasks)-1 {
@@ -62,7 +62,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	
+
 	// Return the updated model (and no command)
 	return m, nil
 }
@@ -73,7 +73,7 @@ func (m model) View() string {
 	// Build the UI string
 	s := "Task Manager - Phase 1\n"
 	s += "======================\n\n"
-	
+
 	// Render each task in our list
 	for i, task := range m.tasks {
 		// Is the cursor pointing at this task?
@@ -81,22 +81,28 @@ func (m model) View() string {
 		if m.cursor == i {
 			cursor = ">" // cursor!
 		}
-		
+
 		// Render the row
 		s += fmt.Sprintf("%s %s\n", cursor, task)
 	}
-	
+
 	// Footer with instructions
 	s += "\n"
 	s += "↑/k up • ↓/j down • q quit\n"
-	
+
 	return s
 }
 
 func main() {
 	// Create a new Bubble Tea program with our model
-	p := tea.NewProgram(initialModel())
-	
+	// WithAltScreen() enables alternate screen mode - the app takes over
+	// the full terminal and restores it when you quit (like vim, lazygit, etc.)
+	p := tea.NewProgram(
+		initialModel(),
+		tea.WithAltScreen(),       // Use alternate screen buffer
+		tea.WithMouseCellMotion(), // Enable mouse support (optional, but nice!)
+	)
+
 	// Start the program and handle any errors
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running program: %v\n", err)
