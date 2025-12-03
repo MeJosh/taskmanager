@@ -196,44 +196,36 @@ func embedTitleInBorder(box string, title string) string {
 		return box
 	}
 
-	// Format title with brackets
+	// Format title with brackets and style it
 	formattedTitle := "[" + title + "]"
-
-	// Get the visible width of the rendered title (excluding ANSI codes)
 	renderedTitle := boxTitleStyle.Render(formattedTitle)
-	titleWidth := lipgloss.Width(renderedTitle)
 
-	// Get the top border line
+	// Get the top border line and its visible width
 	borderLine := lines[0]
 	borderWidth := lipgloss.Width(borderLine)
 
-	if borderWidth < titleWidth+4 {
+	// Calculate space needed for title with padding
+	titleWithPadding := " " + renderedTitle + " "
+	titleWidth := lipgloss.Width(titleWithPadding)
+
+	// Make sure we have enough space
+	if borderWidth < titleWidth+2 {
 		return box // Not enough space
 	}
 
-	// Build the new top line by overlaying the title
-	// We want: "╭ [Title] ─────────────╮"
-	//          corner + space + title + space + borders + corner
+	// Create styled border characters
+	borderStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
 
-	// Use lipgloss to place the title at position 1 (after corner)
-	titleWithSpaces := " " + renderedTitle + " "
+	// Calculate how many horizontal line characters we need
+	// The original border is: space + corner + line chars + corner
+	// We want: space + corner + titleWithPadding + line chars + corner
+	// So: line chars needed = borderWidth - (space + corner + titleWithPadding + corner)
+	horizontalCharsNeeded := borderWidth - titleWidth - 4 // -4 for space, 2 corners, and spacing
 
-	// Calculate how many border chars we need after title
-	// borderWidth includes: left corner (1) + content + right corner (1)
-	// We want: left corner (1) + titleWithSpaces + horizontal lines + right corner (1)
-	// So: horizontal lines = borderWidth - 1 (left corner) - titleWithSpaces - 1 (right corner)
-	charsNeeded := borderWidth - 4 - lipgloss.Width(titleWithSpaces)
-
-	// Create a style for border characters with the same color as the border
-	borderCharStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
-
-	// Construct the new top border line with styled border characters
-	// Format: ╭ [Title] ─────────╮
-	leftCorner := borderCharStyle.Render(" ╭")
-	rightCorner := borderCharStyle.Render("╮")
-	horizontalLine := borderCharStyle.Render(strings.Repeat("─", charsNeeded))
-
-	lines[0] = leftCorner + titleWithSpaces + horizontalLine + rightCorner
+	// Build the new top border
+	lines[0] = borderStyle.Render(" ╭") + titleWithPadding +
+		borderStyle.Render(strings.Repeat("─", horizontalCharsNeeded)) +
+		borderStyle.Render("╮")
 
 	return strings.Join(lines, "\n")
 }
