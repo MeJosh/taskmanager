@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -30,19 +31,75 @@ const (
 	listMode          viewMode = iota // Showing the list of tasks
 	taskViewMode                      // Viewing a single task's content
 	confirmDeleteMode                 // Confirming task deletion
+	searchMode                        // Searching/filtering tasks
 )
 
 // model represents the application state
 // In Bubble Tea, the model holds all the data your application needs
 type model struct {
-	tasks       []taskFile    // Our list of task files
-	cursor      int           // Which task our cursor is pointing at
-	err         error         // Any error encountered while loading files
-	configDirs  []string      // The configured task directories
-	showDirInfo bool          // Whether to show directory info for each task
-	config      DisplayConfig // Display configuration
-	mode        viewMode      // Current view mode
-	taskContent string        // Content of the task being viewed
+	tasks        []taskFile    // Our list of task files
+	filteredTasks []taskFile   // Filtered list based on search
+	cursor       int           // Which task our cursor is pointing at
+	err          error         // Any error encountered while loading files
+	configDirs   []string      // The configured task directories
+	showDirInfo  bool          // Whether to show directory info for each task
+	config       DisplayConfig // Display configuration
+	mode         viewMode      // Current view mode
+	taskContent  string        // Content of the task being viewed
+	searchQuery  string        // Current search query
+}
+
+// visibleTasks returns the list of tasks that should be displayed
+// (either filtered tasks if searching, or all tasks otherwise)
+func (m model) visibleTasks() []taskFile {
+	if m.mode == searchMode && len(m.filteredTasks) > 0 {
+		return m.filteredTasks
+	}
+	if m.mode == searchMode && m.searchQuery != "" {
+		return []taskFile{} // No matches
+	}
+	return m.tasks
+}
+
+// filterTasks filters the task list based on the search query
+func (m *model) filterTasks() {
+	if m.searchQuery == "" {
+		m.filteredTasks = m.tasks
+		return
+	}
+
+	query := strings.ToLower(m.searchQuery)
+	m.filteredTasks = []taskFile{}
+
+	for _, task := range m.tasks {
+		// Search in filename
+		if strings.Contains(strings.ToLower(task.name), query) {
+			m.filteredTasks = append(m.filteredTasks, task)
+			continue
+		}
+		// Search in title
+		if strings.Contains(strings.ToLower(task.metadata.Title), query) {
+			m.filteredTasks = append(m.filteredTasks, task)
+			continue
+		}
+		// Search in status
+		if strings.Contains(strings.ToLower(task.metadata.Status), query) {
+			m.filteredTasks = append(m.filteredTasks, task)
+			continue
+		}
+		// Search in tags
+		for _, tag := range task.metadata.Tags {
+			if strings.Contains(strings.ToLower(tag), query) {
+				m.filteredTasks = append(m.filteredTasks, task)
+				break
+			}
+		}
+	}
+
+	// Reset cursor if out of bounds
+	if m.cursor >= len(m.filteredTasks) {
+		m.cursor = 0
+	}
 }
 
 // expandPath expands ~ to the user's home directory
@@ -312,17 +369,38 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.mode == confirmDeleteMode {
 				// Cancel deletion
 				m.mode = taskViewMode
+			} else if m.mode == searchMode {
+				// Exit search mode
+				m.mode = listMode
+				m.searchQuery = ""
+				m.filteredTasks = nil
+				m.cursor = 0
 			}
 
 		case "enter":
 			if m.mode == listMode && len(m.tasks) > 0 {
 				// Read the task file content
-				content, err := os.ReadFile(m.tasks[m.cursor].fullPath)
-				if err != nil {
-					m.err = fmt.Errorf("failed to read task: %w", err)
-				} else {
-					m.mode = taskViewMode
-					m.taskContent = string(content)
+				visibleTasks := m.visibleTasks()
+				if m.cursor < len(visibleTasks) {
+					content, err := os.ReadFile(visibleTasks[m.cursor].fullPath)
+					if err != nil {
+						m.err = fmt.Errorf("failed to read task: %w", err)
+					} else {
+						m.mode = taskViewMode
+						m.taskContent = string(content)
+					}
+				}
+			} else if m.mode == searchMode && len(m.visibleTasks()) > 0 {
+				// View selected task from search results
+				visibleTasks := m.visibleTasks()
+				if m.cursor < len(visibleTasks) {
+					content, err := os.ReadFile(visibleTasks[m.cursor].fullPath)
+					if err != nil {
+						m.err = fmt.Errorf("failed to read task: %w", err)
+					} else {
+						m.mode = taskViewMode
+						m.taskContent = string(content)
+					}
 				}
 			}
 
@@ -353,16 +431,42 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.deleteTask(), nil
 			}
 
-		// Move up (only in list mode)
+		case "/":
+			if m.mode == listMode {
+				// Enter search mode
+				m.mode = searchMode
+				m.searchQuery = ""
+				m.cursor = 0
+			}
+
+		case "backspace":
+			if m.mode == searchMode && len(m.searchQuery) > 0 {
+				// Remove last character from search query
+				m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+				m.filterTasks()
+			}
+
+		// Move up (only in list or search mode)
 		case "up", "k":
-			if m.mode == listMode && m.cursor > 0 {
+			if (m.mode == listMode || m.mode == searchMode) && m.cursor > 0 {
 				m.cursor--
 			}
 
-		// Move down (only in list mode)
+		// Move down (only in list or search mode)
 		case "down", "j":
-			if m.mode == listMode && m.cursor < len(m.tasks)-1 {
+			visibleTasks := m.visibleTasks()
+			if (m.mode == listMode || m.mode == searchMode) && m.cursor < len(visibleTasks)-1 {
 				m.cursor++
+			}
+
+		default:
+			// In search mode, add typed characters to search query
+			if m.mode == searchMode {
+				// Only allow printable characters
+				if len(msg.String()) == 1 {
+					m.searchQuery += msg.String()
+					m.filterTasks()
+				}
 			}
 		}
 	}
@@ -431,7 +535,12 @@ func (m model) renderTaskView() string {
 func (m model) renderListView() string {
 	// Build the UI string
 	var title string
-	if len(m.configDirs) == 1 {
+	if m.mode == searchMode {
+		title = fmt.Sprintf("Search: %s", m.searchQuery)
+		if m.searchQuery == "" {
+			title = "Search (type to filter)"
+		}
+	} else if len(m.configDirs) == 1 {
 		title = fmt.Sprintf("Task Manager - %s", m.configDirs[0])
 	} else {
 		title = fmt.Sprintf("Task Manager - %d directories", len(m.configDirs))
@@ -450,6 +559,9 @@ func (m model) renderListView() string {
 		return s
 	}
 
+	// Get visible tasks (filtered or all)
+	visibleTasks := m.visibleTasks()
+
 	// If no tasks found, show a helpful message
 	if len(m.tasks) == 0 {
 		s += "No markdown files found in:\n"
@@ -461,8 +573,15 @@ func (m model) renderListView() string {
 		return s
 	}
 
-	// Render each task in our list
-	for i, task := range m.tasks {
+	// If in search mode and no results
+	if m.mode == searchMode && len(visibleTasks) == 0 {
+		s += "No tasks match your search.\n"
+		s += "\nesc: clear search • q: quit\n"
+		return s
+	}
+
+	// Render each visible task in our list
+	for i, task := range visibleTasks {
 		// Is the cursor pointing at this task?
 		cursor := " " // no cursor
 		if m.cursor == i {
@@ -506,11 +625,17 @@ func (m model) renderListView() string {
 
 	// Footer with instructions
 	s += "\n"
-	s += fmt.Sprintf("Showing %d tasks", len(m.tasks))
-	if len(m.configDirs) > 1 {
-		s += fmt.Sprintf(" from %d directories", len(m.configDirs))
+	
+	if m.mode == searchMode {
+		s += fmt.Sprintf("Showing %d of %d tasks", len(visibleTasks), len(m.tasks))
+		s += " • esc: clear search • enter: view • q: quit\n"
+	} else {
+		s += fmt.Sprintf("Showing %d tasks", len(m.tasks))
+		if len(m.configDirs) > 1 {
+			s += fmt.Sprintf(" from %d directories", len(m.configDirs))
+		}
+		s += " • / search • ↑/k up • ↓/j down • enter view • n new • q quit\n"
 	}
-	s += " • ↑/k up • ↓/j down • enter view • n new • q quit\n"
 
 	return s
 }

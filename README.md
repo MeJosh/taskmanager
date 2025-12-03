@@ -19,7 +19,8 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 - ✅ **Task viewing** - read full task content in the TUI
 - ✅ **Task editing** - open tasks in your preferred editor ($EDITOR)
 - ✅ **Task creation** - create new tasks with template
-- ✅ **Task deletion** - remove tasks directly from the TUI
+- ✅ **Task deletion** - remove tasks directly from the TUI with confirmation
+- ✅ **Search/filter** - real-time search across filenames, titles, status, and tags
 - ✅ Status indicators (`[ ]` todo, `[~]` in-progress, `[✓]` done)
 - ✅ Priority indicators (high, med, low)
 - ✅ Display task titles from frontmatter
@@ -29,8 +30,7 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 - ✅ Keyboard navigation (↑/↓ or k/j)
 - ✅ Backward compatible with files without frontmatter
 
-### Planned (Phase 7)
-- 🔍 Search/filter functionality
+### Planned
 - � Multiple sort options
 - 🎨 Color theming
 - ⚡ Performance optimizations
@@ -69,8 +69,18 @@ The application will display all `.md` files from your `~/.tasks` directory, sor
 
 - `↑/k` - Move up
 - `↓/j` - Move down
+- `/` - Search/filter tasks
 - `enter` - View task
 - `n` - Create new task
+- `q` - Quit
+
+**Search Mode:**
+
+- Type to filter tasks (searches filename, title, status, and tags)
+- `↑/k` / `↓/j` - Navigate filtered results
+- `enter` - View selected task
+- `esc` - Clear search and return to list
+- `backspace` - Delete last character
 - `q` - Quit
 
 **Task View:**
