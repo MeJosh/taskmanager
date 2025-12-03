@@ -15,14 +15,32 @@ type Config struct {
 
 // TaskManagerConfig holds the task manager specific settings
 type TaskManagerConfig struct {
-	Directory string `toml:"directory"` // Directory containing task markdown files
+	Directory   string   `toml:"directory"`   // Single directory (deprecated, use Directories)
+	Directories []string `toml:"directories"` // Multiple directories containing task markdown files
+}
+
+// GetDirectories returns all configured directories
+// Handles both old single directory and new multiple directories config
+func (c *TaskManagerConfig) GetDirectories() []string {
+	// If Directories is set, use that
+	if len(c.Directories) > 0 {
+		return c.Directories
+	}
+	
+	// Otherwise fall back to single Directory
+	if c.Directory != "" {
+		return []string{c.Directory}
+	}
+	
+	// Default fallback
+	return []string{"~/.tasks"}
 }
 
 // defaultConfig returns the default configuration
 func defaultConfig() Config {
 	return Config{
 		TaskManager: TaskManagerConfig{
-			Directory: "~/.tasks",
+			Directories: []string{"~/.tasks"},
 		},
 	}
 }

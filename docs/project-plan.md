@@ -62,18 +62,20 @@ A TUI (Terminal User Interface) application built with Go and Bubble Tea for man
 - Auto-creation of config directory and default config
 - Documentation on config options
 
-### Phase 4: Multi-Directory Support
+### Phase 4: Multi-Directory Support ✅
 **Goal**: Support multiple task directories
 
 **Tasks**:
-- [ ] Update config to support multiple directories
-- [ ] Aggregate files from all configured directories
-- [ ] Display directory source for each task
-- [ ] Handle duplicate filenames across directories
+- [x] Update config to support multiple directories
+- [x] Aggregate files from all configured directories
+- [x] Display directory source for each task
+- [x] Handle duplicate filenames across directories
+- [x] Maintain backward compatibility with single directory config
 
 **Deliverables**:
 - Support for multiple task directories in config
 - Clear indication of which directory each task belongs to
+- Backward compatible with existing single-directory configs
 
 ### Phase 5: Markdown Frontmatter Parsing
 **Goal**: Extract and display task metadata from markdown frontmatter

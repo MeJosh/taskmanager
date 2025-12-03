@@ -4,25 +4,27 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 
 ## Status
 
-🚧 **Early Development** - Currently in Phase 3 Complete
+🚧 **Early Development** - Currently in Phase 4 Complete
 
 ## Features
 
-### Current (Phase 3)
+### Current (Phase 4)
 - ✅ Basic TUI interface using Bubble Tea
 - ✅ Full-screen alternate mode (like lazygit)
 - ✅ TOML configuration file support (`~/.config/taskmanager/config.toml`)
-- ✅ Configurable task directory
-- ✅ Load and display markdown files from configured directory
+- ✅ **Multi-directory support** - track tasks across multiple project folders
+- ✅ Configurable task directories (single or multiple)
+- ✅ Load and display markdown files from all configured directories
+- ✅ Show source directory for each task (when using multiple directories)
 - ✅ Show last modification date for each task
 - ✅ Automatic sorting by modification time (newest first)
 - ✅ Keyboard navigation (↑/↓ or k/j)
+- ✅ Backward compatible with single directory config
 
 ### Planned
-- � Multi-directory support
+- 🎨 Markdown frontmatter support for task metadata
 - 🔍 Filter and search tasks
 - 📝 View and edit tasks
-- 🎨 Markdown frontmatter support for task metadata
 
 ## Installation
 
@@ -61,19 +63,32 @@ The application will display all `.md` files from your `~/.tasks` directory, sor
 
 Configuration is stored in `~/.config/taskmanager/config.toml`.
 
-On first run, a default configuration file will be created automatically:
+On first run, a default configuration file will be created automatically.
+
+### Single Directory (Backward Compatible)
 
 ```toml
 [taskmanager]
 directory = "~/.tasks"
 ```
 
-You can edit this file to change where your tasks are stored:
+### Multiple Directories (Recommended)
+
+Track tasks across multiple project directories:
 
 ```toml
 [taskmanager]
-directory = "~/Documents/my-tasks"
+directories = [
+    "~/.tasks",
+    "~/Projects/project-a/tasks",
+    "~/Projects/project-b/tasks"
+]
 ```
+
+When using multiple directories, the app will:
+- Load all `.md` files from all configured directories
+- Sort them by modification time (newest first)
+- Display the source directory for each task
 
 ## Project Structure
 

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-03
+
+### Added
+- Multi-directory support - track tasks across multiple project directories
+- Directory source tracking for each task file
+- Automatic display of source directory when using multiple directories
+- Backward compatibility with single directory configuration
+- Helper method `GetDirectories()` for config handling
+- Better error handling for multiple directories (partial failures)
+
+### Changed
+- Config now supports both `directory` (single) and `directories` (multiple)
+- Tasks from all directories are merged and sorted by modification time
+- UI adapts to show directory info when multiple directories are configured
+- Default config now uses `directories` array format
+
+### Phase 4 Complete ✅
+- Full multi-directory support
+- Backward compatible with existing configs
+- Clean UI for showing task sources
+
 ## [0.3.0] - 2025-12-03
 
 ### Added

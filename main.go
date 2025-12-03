@@ -12,33 +12,44 @@ import (
 
 // taskFile represents a markdown file with its metadata
 type taskFile struct {
-	name     string    // filename
-	modTime  time.Time // last modification time
-	fullPath string    // absolute path to the file
+	name      string    // filename
+	modTime   time.Time // last modification time
+	fullPath  string    // absolute path to the file
+	sourceDir string    // which directory this task came from
 }
 
 // model represents the application state
 // In Bubble Tea, the model holds all the data your application needs
 type model struct {
-	tasks     []taskFile // Our list of task files
-	cursor    int        // Which task our cursor is pointing at
-	err       error      // Any error encountered while loading files
-	configDir string     // The configured task directory
+	tasks       []taskFile // Our list of task files
+	cursor      int        // Which task our cursor is pointing at
+	err         error      // Any error encountered while loading files
+	configDirs  []string   // The configured task directories
+	showDirInfo bool       // Whether to show directory info for each task
+}
+
+// expandPath expands ~ to the user's home directory
+func expandPath(path string) (string, error) {
+	if len(path) >= 2 && path[:2] == "~/" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("couldn't get home directory: %w", err)
+		}
+		return filepath.Join(homeDir, path[2:]), nil
+	}
+	return path, nil
 }
 
 // loadTasksFromDirectory reads all .md files from the specified directory
 func loadTasksFromDirectory(dir string) ([]taskFile, error) {
 	// Expand the tilde (~) to the user's home directory
-	if dir[:2] == "~/" {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return nil, fmt.Errorf("couldn't get home directory: %w", err)
-		}
-		dir = filepath.Join(homeDir, dir[2:])
+	expandedDir, err := expandPath(dir)
+	if err != nil {
+		return nil, err
 	}
 
 	// Read all files in the directory
-	entries, err := os.ReadDir(dir)
+	entries, err := os.ReadDir(expandedDir)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't read directory %s: %w", dir, err)
 	}
@@ -64,18 +75,51 @@ func loadTasksFromDirectory(dir string) ([]taskFile, error) {
 		}
 
 		tasks = append(tasks, taskFile{
-			name:     entry.Name(),
-			modTime:  info.ModTime(),
-			fullPath: filepath.Join(dir, entry.Name()),
+			name:      entry.Name(),
+			modTime:   info.ModTime(),
+			fullPath:  filepath.Join(expandedDir, entry.Name()),
+			sourceDir: dir, // Store the original (unexpanded) directory
 		})
 	}
 
-	// Sort by modification time (newest first)
-	sort.Slice(tasks, func(i, j int) bool {
-		return tasks[i].modTime.After(tasks[j].modTime)
+	return tasks, nil
+}
+
+// loadTasksFromDirectories reads all .md files from multiple directories
+func loadTasksFromDirectories(dirs []string) ([]taskFile, error) {
+	var allTasks []taskFile
+	var errors []string
+
+	for _, dir := range dirs {
+		tasks, err := loadTasksFromDirectory(dir)
+		if err != nil {
+			// Don't fail completely, just track the error
+			errors = append(errors, fmt.Sprintf("%s: %v", dir, err))
+			continue
+		}
+		allTasks = append(allTasks, tasks...)
+	}
+
+	// Sort all tasks by modification time (newest first)
+	sort.Slice(allTasks, func(i, j int) bool {
+		return allTasks[i].modTime.After(allTasks[j].modTime)
 	})
 
-	return tasks, nil
+	// If we had errors but still got some tasks, return tasks with a warning
+	if len(errors) > 0 && len(allTasks) > 0 {
+		// Just log the errors, don't fail
+		fmt.Fprintf(os.Stderr, "Warning: Some directories couldn't be read:\n")
+		for _, e := range errors {
+			fmt.Fprintf(os.Stderr, "  - %s\n", e)
+		}
+	}
+
+	// If we had errors and no tasks, return the error
+	if len(errors) > 0 && len(allTasks) == 0 {
+		return nil, fmt.Errorf("couldn't read any directories: %s", errors[0])
+	}
+
+	return allTasks, nil
 }
 
 // initialModel creates the starting state of our application
@@ -84,21 +128,26 @@ func initialModel() model {
 	cfg, err := loadConfig()
 	if err != nil {
 		return model{
-			tasks:     nil,
-			cursor:    0,
-			err:       fmt.Errorf("failed to load config: %w", err),
-			configDir: "~/.tasks", // fallback
+			tasks:       nil,
+			cursor:      0,
+			err:         fmt.Errorf("failed to load config: %w", err),
+			configDirs:  []string{"~/.tasks"}, // fallback
+			showDirInfo: false,
 		}
 	}
 
-	// Load tasks from configured directory
-	tasks, loadErr := loadTasksFromDirectory(cfg.TaskManager.Directory)
+	// Get all configured directories
+	dirs := cfg.TaskManager.GetDirectories()
+
+	// Load tasks from all configured directories
+	tasks, loadErr := loadTasksFromDirectories(dirs)
 
 	return model{
-		tasks:     tasks,
-		cursor:    0,
-		err:       loadErr,
-		configDir: cfg.TaskManager.Directory,
+		tasks:       tasks,
+		cursor:      0,
+		err:         loadErr,
+		configDirs:  dirs,
+		showDirInfo: len(dirs) > 1, // Show directory info if multiple directories
 	}
 }
 
@@ -144,21 +193,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // This function is called after every Update
 func (m model) View() string {
 	// Build the UI string
-	s := fmt.Sprintf("Task Manager - %s\n", m.configDir)
+	var title string
+	if len(m.configDirs) == 1 {
+		title = fmt.Sprintf("Task Manager - %s", m.configDirs[0])
+	} else {
+		title = fmt.Sprintf("Task Manager - %d directories", len(m.configDirs))
+	}
+	s := title + "\n"
 	s += "======================\n\n"
 
 	// If there was an error loading tasks, display it
 	if m.err != nil {
 		s += fmt.Sprintf("Error: %v\n\n", m.err)
-		s += fmt.Sprintf("Make sure the %s directory exists.\n", m.configDir)
+		s += "Make sure the configured directories exist:\n"
+		for _, dir := range m.configDirs {
+			s += fmt.Sprintf("  - %s\n", dir)
+		}
 		s += "\nPress 'q' to quit\n"
 		return s
 	}
 
 	// If no tasks found, show a helpful message
 	if len(m.tasks) == 0 {
-		s += fmt.Sprintf("No markdown files found in %s\n\n", m.configDir)
-		s += "Add some .md files to get started!\n"
+		s += "No markdown files found in:\n"
+		for _, dir := range m.configDirs {
+			s += fmt.Sprintf("  - %s\n", dir)
+		}
+		s += "\nAdd some .md files to get started!\n"
 		s += "\nPress 'q' to quit\n"
 		return s
 	}
@@ -174,14 +235,24 @@ func (m model) View() string {
 		// Format the modification time nicely
 		modTime := task.modTime.Format("2006-01-02 15:04")
 
-		// Render the row
-		s += fmt.Sprintf("%s %-40s  %s\n", cursor, task.name, modTime)
+		// Build the row
+		row := fmt.Sprintf("%s %-40s  %s", cursor, task.name, modTime)
+		
+		// If we have multiple directories, show which one this task is from
+		if m.showDirInfo {
+			row += fmt.Sprintf("  [%s]", task.sourceDir)
+		}
+		
+		s += row + "\n"
 	}
 
 	// Footer with instructions
 	s += "\n"
-	s += fmt.Sprintf("Showing %d tasks • ", len(m.tasks))
-	s += "↑/k up • ↓/j down • q quit\n"
+	s += fmt.Sprintf("Showing %d tasks", len(m.tasks))
+	if len(m.configDirs) > 1 {
+		s += fmt.Sprintf(" from %d directories", len(m.configDirs))
+	}
+	s += " • ↑/k up • ↓/j down • q quit\n"
 
 	return s
 }
