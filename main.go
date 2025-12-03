@@ -32,21 +32,22 @@ const (
 	taskViewMode                      // Viewing a single task's content
 	confirmDeleteMode                 // Confirming task deletion
 	searchMode                        // Searching/filtering tasks
+	helpMode                          // Showing help/keyboard shortcuts
 )
 
 // model represents the application state
 // In Bubble Tea, the model holds all the data your application needs
 type model struct {
-	tasks        []taskFile    // Our list of task files
-	filteredTasks []taskFile   // Filtered list based on search
-	cursor       int           // Which task our cursor is pointing at
-	err          error         // Any error encountered while loading files
-	configDirs   []string      // The configured task directories
-	showDirInfo  bool          // Whether to show directory info for each task
-	config       DisplayConfig // Display configuration
-	mode         viewMode      // Current view mode
-	taskContent  string        // Content of the task being viewed
-	searchQuery  string        // Current search query
+	tasks         []taskFile    // Our list of task files
+	filteredTasks []taskFile    // Filtered list based on search
+	cursor        int           // Which task our cursor is pointing at
+	err           error         // Any error encountered while loading files
+	configDirs    []string      // The configured task directories
+	showDirInfo   bool          // Whether to show directory info for each task
+	config        DisplayConfig // Display configuration
+	mode          viewMode      // Current view mode
+	taskContent   string        // Content of the task being viewed
+	searchQuery   string        // Current search query
 }
 
 // visibleTasks returns the list of tasks that should be displayed
@@ -375,6 +376,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.searchQuery = ""
 				m.filteredTasks = nil
 				m.cursor = 0
+			} else if m.mode == helpMode {
+				// Exit help mode
+				m.mode = listMode
+			}
+
+		case "?", "h":
+			if m.mode == listMode || m.mode == searchMode {
+				// Show help screen
+				m.mode = helpMode
 			}
 
 		case "enter":
@@ -478,6 +488,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the UI based on the current model state
 // This function is called after every Update
 func (m model) View() string {
+	// If in help mode, show help screen
+	if m.mode == helpMode {
+		return m.renderHelpView()
+	}
+
 	// If in confirmation mode, show confirmation dialog
 	if m.mode == confirmDeleteMode {
 		return m.renderDeleteConfirmation()
@@ -490,6 +505,47 @@ func (m model) View() string {
 
 	// Otherwise, show the task list
 	return m.renderListView()
+}
+
+// renderHelpView displays keyboard shortcuts and help
+func (m model) renderHelpView() string {
+	s := "Task Manager - Keyboard Shortcuts\n"
+	s += "======================\n\n"
+
+	s += "LIST VIEW\n"
+	s += "  ↑/k          Move cursor up\n"
+	s += "  ↓/j          Move cursor down\n"
+	s += "  enter        View selected task\n"
+	s += "  /            Search/filter tasks\n"
+	s += "  n            Create new task\n"
+	s += "  ?/h          Show this help screen\n"
+	s += "  q            Quit application\n\n"
+
+	s += "SEARCH MODE\n"
+	s += "  [type]       Filter tasks (searches name, title, status, tags)\n"
+	s += "  ↑/k, ↓/j     Navigate filtered results\n"
+	s += "  enter        View selected task\n"
+	s += "  backspace    Delete last character\n"
+	s += "  esc          Exit search mode\n\n"
+
+	s += "TASK VIEW\n"
+	s += "  e            Edit task in $EDITOR\n"
+	s += "  d            Delete task (with confirmation)\n"
+	s += "  esc          Return to list\n"
+	s += "  q            Quit application\n\n"
+
+	s += "DELETE CONFIRMATION\n"
+	s += "  y            Confirm deletion\n"
+	s += "  n/esc        Cancel deletion\n\n"
+
+	s += "CONFIGURATION\n"
+	s += "  Config: ~/.config/taskmanager/config.toml\n"
+	s += "  Customize directories, status indicators, and more\n\n"
+
+	s += "----------------------\n"
+	s += "esc: close help • q: quit\n"
+
+	return s
 }
 
 // renderDeleteConfirmation shows a confirmation dialog for deleting a task
@@ -625,16 +681,16 @@ func (m model) renderListView() string {
 
 	// Footer with instructions
 	s += "\n"
-	
+
 	if m.mode == searchMode {
 		s += fmt.Sprintf("Showing %d of %d tasks", len(visibleTasks), len(m.tasks))
-		s += " • esc: clear search • enter: view • q: quit\n"
+		s += " • esc: clear search • enter: view • ?: help • q: quit\n"
 	} else {
 		s += fmt.Sprintf("Showing %d tasks", len(m.tasks))
 		if len(m.configDirs) > 1 {
 			s += fmt.Sprintf(" from %d directories", len(m.configDirs))
 		}
-		s += " • / search • ↑/k up • ↓/j down • enter view • n new • q quit\n"
+		s += " • / search • ↑/k up • ↓/j down • enter view • n new • ?: help • q quit\n"
 	}
 
 	return s
