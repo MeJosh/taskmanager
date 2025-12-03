@@ -26,6 +26,11 @@ var (
 			BorderForeground(lipgloss.Color("240")). // Light gray border
 			Padding(0, 1)
 
+	boxTitleStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("250")). // Light gray
+			Bold(true).
+			Padding(0, 1)
+
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("15")). // White
@@ -59,7 +64,7 @@ var (
 				Foreground(lipgloss.Color("214")) // Orange
 
 	priorityLowStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("245")) // Gray
+				Foreground(lipgloss.Color("245")) // Gray
 
 	errorStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("196")). // Red
@@ -711,7 +716,14 @@ func (m model) renderListView() string {
 		for _, dir := range m.configDirs {
 			content += fmt.Sprintf("  - %s\n", dir)
 		}
-		sections = append(sections, mainBoxStyle.Render(content))
+		
+		// Add box with title
+		box := mainBoxStyle.Render(content)
+		boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
+			boxTitleStyle.Render("Tasks"),
+			box,
+		)
+		sections = append(sections, boxWithTitle)
 		sections = append(sections, footerStyle.Render("q: quit"))
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}
@@ -723,15 +735,27 @@ func (m model) renderListView() string {
 	if len(m.tasks) == 0 {
 		content := "No markdown files found.\n\n"
 		content += "Add some .md files to get started!"
-		sections = append(sections, mainBoxStyle.Render(content))
 		
-		// Directory info box
-		dirContent := "Directories:\n"
+		// Add tasks box with title
+		box := mainBoxStyle.Render(content)
+		boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
+			boxTitleStyle.Render("Tasks"),
+			box,
+		)
+		sections = append(sections, boxWithTitle)
+
+		// Directory info box with title
+		dirContent := ""
 		for _, dir := range m.configDirs {
-			dirContent += fmt.Sprintf("  • %s\n", dir)
+			dirContent += fmt.Sprintf("• %s\n", dir)
 		}
-		sections = append(sections, dirBoxStyle.Render(dirContent))
-		
+		dirBox := dirBoxStyle.Render(strings.TrimSpace(dirContent))
+		dirBoxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
+			boxTitleStyle.Render("Directories"),
+			dirBox,
+		)
+		sections = append(sections, dirBoxWithTitle)
+
 		sections = append(sections, footerStyle.Render("q: quit"))
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}
@@ -739,7 +763,12 @@ func (m model) renderListView() string {
 	// If in search mode and no results
 	if m.mode == searchMode && len(visibleTasks) == 0 {
 		content := "No tasks match your search."
-		sections = append(sections, mainBoxStyle.Render(content))
+		box := mainBoxStyle.Render(content)
+		boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
+			boxTitleStyle.Render("Tasks"),
+			box,
+		)
+		sections = append(sections, boxWithTitle)
 		sections = append(sections, footerStyle.Render("esc: clear search • q: quit"))
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}
@@ -811,20 +840,65 @@ func (m model) renderListView() string {
 		content += row + "\n"
 	}
 
-	// Add the task list box
-	sections = append(sections, mainBoxStyle.Render(content))
+	// Calculate how much height we have available
+	// Account for: search title (if present), box title, dir box, dir box title, footer
+	usedHeight := 0
+	if m.mode == searchMode {
+		usedHeight += 2 // search title + spacing
+	}
+	usedHeight += 1 // Tasks box title
+	usedHeight += 4 // Tasks box border (top + bottom) + padding
+	usedHeight += 1 // Directories box title
+	
+	// Calculate directory box height
+	dirLines := 1 // At least one line
+	if len(m.configDirs) > 1 {
+		dirLines = len(m.configDirs)
+	}
+	usedHeight += dirLines + 2 // dir content + border
+	usedHeight += 2 // footer + spacing
 
-	// Directory info box
-	dirContent := "Directories: "
-	if len(m.configDirs) == 1 {
-		dirContent += m.configDirs[0]
-	} else {
-		dirContent += fmt.Sprintf("%d locations", len(m.configDirs))
-		for _, dir := range m.configDirs {
-			dirContent += fmt.Sprintf("\n  • %s", dir)
+	// Count current content lines
+	contentLines := strings.Count(content, "\n")
+	
+	// Calculate available height for tasks box
+	availableHeight := m.height - usedHeight
+	if availableHeight < 0 {
+		availableHeight = 0
+	}
+
+	// Add padding to fill remaining space
+	if contentLines < availableHeight {
+		paddingNeeded := availableHeight - contentLines
+		for i := 0; i < paddingNeeded; i++ {
+			content += "\n"
 		}
 	}
-	sections = append(sections, dirBoxStyle.Render(dirContent))
+
+	// Add the task list box with title
+	box := mainBoxStyle.Render(strings.TrimRight(content, "\n"))
+	boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
+		boxTitleStyle.Render("Tasks"),
+		box,
+	)
+	sections = append(sections, boxWithTitle)
+
+	// Directory info box with title
+	dirContent := ""
+	if len(m.configDirs) == 1 {
+		dirContent = m.configDirs[0]
+	} else {
+		for _, dir := range m.configDirs {
+			dirContent += fmt.Sprintf("• %s\n", dir)
+		}
+		dirContent = strings.TrimRight(dirContent, "\n")
+	}
+	dirBox := dirBoxStyle.Render(dirContent)
+	dirBoxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
+		boxTitleStyle.Render("Directories"),
+		dirBox,
+	)
+	sections = append(sections, dirBoxWithTitle)
 
 	// Footer with instructions at the bottom
 	var footer string
