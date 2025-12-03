@@ -11,6 +11,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// reloadTasksMsg is sent when we need to reload the task list
+type reloadTasksMsg struct{}
+
 // taskFile represents a markdown file with its metadata
 type taskFile struct {
 	name      string       // filename
@@ -197,9 +200,8 @@ func (m model) editTask() tea.Cmd {
 
 	c := exec.Command(editor, taskPath)
 	return tea.ExecProcess(c, func(err error) tea.Msg {
-		// After editing, we could reload the task list here
-		// For now, just return to list mode
-		return tea.KeyMsg{Type: tea.KeyEsc}
+		// After editing, reload the task list to show updated content
+		return reloadTasksMsg{}
 	})
 }
 
@@ -239,8 +241,8 @@ Write your task description here...
 	// Open in editor
 	c := exec.Command(editor, taskPath)
 	return tea.ExecProcess(c, func(err error) tea.Msg {
-		// Return a quit message to reload the app
-		return tea.KeyMsg{Type: tea.KeyCtrlC}
+		// Return a message to reload tasks and go back to list mode
+		return reloadTasksMsg{}
 	})
 }
 
@@ -281,6 +283,18 @@ func (m model) Init() tea.Cmd {
 // This is where we handle user input and update our model
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	// Handle reload tasks message
+	case reloadTasksMsg:
+		// Reload tasks from all configured directories
+		tasks, err := loadTasksFromDirectories(m.configDirs)
+		m.tasks = tasks
+		m.err = err
+		m.mode = listMode
+		m.taskContent = ""
+		// Reset cursor to top
+		m.cursor = 0
+		return m, nil
 
 	// Is it a key press?
 	case tea.KeyMsg:
