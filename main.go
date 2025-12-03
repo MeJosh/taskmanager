@@ -15,22 +15,25 @@ import (
 
 // Color styles for the UI
 var (
-	// Box and border styles
+	// Box and border styles - using subtle white/gray colors
 	mainBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("62")). // Purple border
-			Padding(1, 2).
-			MarginTop(1).
-			MarginBottom(1)
+			BorderForeground(lipgloss.Color("240")). // Light gray border
+			Padding(1, 2)
+
+	dirBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("240")). // Light gray border
+			Padding(0, 1)
 
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("39")). // Bright blue
+			Foreground(lipgloss.Color("15")). // White
 			MarginBottom(1)
 
 	headerStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("205")). // Pink
+			Foreground(lipgloss.Color("250")). // Light gray
 			Underline(true)
 
 	cursorStyle = lipgloss.NewStyle().
@@ -63,14 +66,14 @@ var (
 			Bold(true)
 
 	helpKeyStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("39")). // Bright blue
+			Foreground(lipgloss.Color("252")). // Light gray
 			Bold(true)
 
 	helpDescStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("252")) // Light gray
+			Foreground(lipgloss.Color("250")) // Light gray
 
 	footerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")). // Dark gray
+			Foreground(lipgloss.Color("243")). // Medium gray
 			Italic(true)
 
 	searchQueryStyle = lipgloss.NewStyle().
@@ -117,6 +120,8 @@ type model struct {
 	mode          viewMode      // Current view mode
 	taskContent   string        // Content of the task being viewed
 	searchQuery   string        // Current search query
+	width         int           // Terminal width
+	height        int           // Terminal height
 }
 
 // visibleTasks returns the list of tasks that should be displayed
@@ -411,6 +416,15 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
+	// Handle window resize
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		// Update box styles with new width
+		mainBoxStyle = mainBoxStyle.Width(m.width - 4)
+		dirBoxStyle = dirBoxStyle.Width(m.width - 4)
+		return m, nil
+
 	// Handle reload tasks message
 	case reloadTasksMsg:
 		// Reload tasks from all configured directories
@@ -578,7 +592,10 @@ func (m model) View() string {
 
 // renderHelpView displays keyboard shortcuts and help
 func (m model) renderHelpView() string {
-	title := titleStyle.Render("Task Manager - Keyboard Shortcuts")
+	var sections []string
+
+	title := titleStyle.Render("Keyboard Shortcuts")
+	sections = append(sections, title)
 
 	var content string
 	content += headerStyle.Render("LIST VIEW") + "\n"
@@ -609,16 +626,20 @@ func (m model) renderHelpView() string {
 
 	content += headerStyle.Render("CONFIGURATION") + "\n"
 	content += "  " + helpDescStyle.Render("Config: ~/.config/taskmanager/config.toml") + "\n"
-	content += "  " + helpDescStyle.Render("Customize directories, status indicators, and more") + "\n\n"
+	content += "  " + helpDescStyle.Render("Customize directories, status indicators, and more")
 
-	content += footerStyle.Render("esc: close help • q: quit")
+	sections = append(sections, mainBoxStyle.Render(content))
+	sections = append(sections, footerStyle.Render("esc: close help • q: quit"))
 
-	return title + "\n" + mainBoxStyle.Render(content)
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
 // renderDeleteConfirmation shows a confirmation dialog for deleting a task
 func (m model) renderDeleteConfirmation() string {
+	var sections []string
+
 	title := titleStyle.Render("Delete Task")
+	sections = append(sections, title)
 
 	var content string
 	if m.cursor < len(m.tasks) {
@@ -630,14 +651,18 @@ func (m model) renderDeleteConfirmation() string {
 		content += fmt.Sprintf("Path: %s\n", m.tasks[m.cursor].fullPath)
 	}
 
-	content += "\n" + errorStyle.Render("This action cannot be undone!") + "\n\n"
-	content += footerStyle.Render("y: yes, delete • esc/n: cancel • q: quit")
+	content += "\n" + errorStyle.Render("This action cannot be undone!")
 
-	return title + "\n" + mainBoxStyle.Render(content)
+	sections = append(sections, mainBoxStyle.Render(content))
+	sections = append(sections, footerStyle.Render("y: yes, delete • esc/n: cancel • q: quit"))
+
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
 // renderTaskView displays the content of a single task
 func (m model) renderTaskView() string {
+	var sections []string
+
 	var title string
 	if m.cursor < len(m.tasks) {
 		if m.tasks[m.cursor].metadata.Title != "" {
@@ -648,6 +673,7 @@ func (m model) renderTaskView() string {
 	} else {
 		title = titleStyle.Render("Task Viewer")
 	}
+	sections = append(sections, title)
 
 	var content string
 	if m.cursor < len(m.tasks) {
@@ -655,15 +681,19 @@ func (m model) renderTaskView() string {
 		content += dimStyle.Render(fmt.Sprintf("Path: %s", m.tasks[m.cursor].fullPath)) + "\n\n"
 	}
 
-	content += m.taskContent + "\n\n"
-	content += footerStyle.Render("esc: back • e: edit • d: delete • q: quit")
+	content += m.taskContent
 
-	return title + "\n" + mainBoxStyle.Render(content)
+	sections = append(sections, mainBoxStyle.Render(content))
+	sections = append(sections, footerStyle.Render("esc: back • e: edit • d: delete • q: quit"))
+
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
 // renderListView displays the list of tasks
 func (m model) renderListView() string {
-	// Build the title
+	var sections []string
+
+	// Build the title (only for search mode)
 	var title string
 	if m.mode == searchMode {
 		if m.searchQuery == "" {
@@ -671,10 +701,7 @@ func (m model) renderListView() string {
 		} else {
 			title = titleStyle.Render("Search: ") + searchQueryStyle.Render(m.searchQuery)
 		}
-	} else if len(m.configDirs) == 1 {
-		title = titleStyle.Render(fmt.Sprintf("Task Manager - %s", m.configDirs[0]))
-	} else {
-		title = titleStyle.Render(fmt.Sprintf("Task Manager - %d directories", len(m.configDirs)))
+		sections = append(sections, title)
 	}
 
 	// If there was an error loading tasks, display it
@@ -684,8 +711,9 @@ func (m model) renderListView() string {
 		for _, dir := range m.configDirs {
 			content += fmt.Sprintf("  - %s\n", dir)
 		}
-		content += footerStyle.Render("\nPress 'q' to quit")
-		return title + "\n" + mainBoxStyle.Render(content)
+		sections = append(sections, mainBoxStyle.Render(content))
+		sections = append(sections, footerStyle.Render("q: quit"))
+		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}
 
 	// Get visible tasks (filtered or all)
@@ -693,20 +721,27 @@ func (m model) renderListView() string {
 
 	// If no tasks found, show a helpful message
 	if len(m.tasks) == 0 {
-		content := "No markdown files found in:\n"
+		content := "No markdown files found.\n\n"
+		content += "Add some .md files to get started!"
+		sections = append(sections, mainBoxStyle.Render(content))
+		
+		// Directory info box
+		dirContent := "Directories:\n"
 		for _, dir := range m.configDirs {
-			content += fmt.Sprintf("  - %s\n", dir)
+			dirContent += fmt.Sprintf("  • %s\n", dir)
 		}
-		content += "\nAdd some .md files to get started!\n"
-		content += "\nPress 'q' to quit"
-		return title + "\n" + mainBoxStyle.Render(content)
+		sections = append(sections, dirBoxStyle.Render(dirContent))
+		
+		sections = append(sections, footerStyle.Render("q: quit"))
+		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}
 
 	// If in search mode and no results
 	if m.mode == searchMode && len(visibleTasks) == 0 {
-		content := "No tasks match your search.\n\n"
-		content += "esc: clear search • q: quit"
-		return title + "\n" + mainBoxStyle.Render(content)
+		content := "No tasks match your search."
+		sections = append(sections, mainBoxStyle.Render(content))
+		sections = append(sections, footerStyle.Render("esc: clear search • q: quit"))
+		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}
 
 	// Build task list content
@@ -776,24 +811,33 @@ func (m model) renderListView() string {
 		content += row + "\n"
 	}
 
-	// Add spacer before footer
-	content += "\n"
+	// Add the task list box
+	sections = append(sections, mainBoxStyle.Render(content))
 
-	// Footer with instructions
+	// Directory info box
+	dirContent := "Directories: "
+	if len(m.configDirs) == 1 {
+		dirContent += m.configDirs[0]
+	} else {
+		dirContent += fmt.Sprintf("%d locations", len(m.configDirs))
+		for _, dir := range m.configDirs {
+			dirContent += fmt.Sprintf("\n  • %s", dir)
+		}
+	}
+	sections = append(sections, dirBoxStyle.Render(dirContent))
+
+	// Footer with instructions at the bottom
 	var footer string
 	if m.mode == searchMode {
 		footer = fmt.Sprintf("Showing %d of %d tasks", len(visibleTasks), len(m.tasks))
 		footer += " • esc: clear search • enter: view • ?: help • q: quit"
 	} else {
 		footer = fmt.Sprintf("Showing %d tasks", len(m.tasks))
-		if len(m.configDirs) > 1 {
-			footer += fmt.Sprintf(" from %d directories", len(m.configDirs))
-		}
 		footer += " • /: search • ↑/k: up • ↓/j: down • enter: view • n: new • ?: help • q: quit"
 	}
-	content += footerStyle.Render(footer)
+	sections = append(sections, footerStyle.Render(footer))
 
-	return title + "\n" + mainBoxStyle.Render(content)
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
 func main() {
