@@ -149,9 +149,7 @@ func initialModel() model {
 		configDirs:  dirs,
 		showDirInfo: len(dirs) > 1, // Show directory info if multiple directories
 	}
-}
-
-// Init is called once when the program starts
+}// Init is called once when the program starts
 // It can return a command to run (we don't need any for now)
 func (m model) Init() tea.Cmd {
 	// No initial commands needed for this simple app
@@ -237,12 +235,12 @@ func (m model) View() string {
 
 		// Build the row
 		row := fmt.Sprintf("%s %-40s  %s", cursor, task.name, modTime)
-		
+
 		// If we have multiple directories, show which one this task is from
 		if m.showDirInfo {
 			row += fmt.Sprintf("  [%s]", task.sourceDir)
 		}
-		
+
 		s += row + "\n"
 	}
 

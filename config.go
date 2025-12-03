@@ -26,12 +26,12 @@ func (c *TaskManagerConfig) GetDirectories() []string {
 	if len(c.Directories) > 0 {
 		return c.Directories
 	}
-	
+
 	// Otherwise fall back to single Directory
 	if c.Directory != "" {
 		return []string{c.Directory}
 	}
-	
+
 	// Default fallback
 	return []string{"~/.tasks"}
 }
@@ -84,9 +84,7 @@ func loadConfig() (Config, error) {
 	}
 
 	return cfg, nil
-}
-
-// saveConfig writes the configuration to file
+} // saveConfig writes the configuration to file
 func saveConfig(cfg Config) error {
 	configFile, err := getConfigPath()
 	if err != nil {
