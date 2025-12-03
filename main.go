@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"time"
@@ -19,6 +20,15 @@ type taskFile struct {
 	metadata  TaskMetadata // parsed frontmatter metadata
 }
 
+// viewMode represents different states of the application
+type viewMode int
+
+const (
+	listMode          viewMode = iota // Showing the list of tasks
+	taskViewMode                      // Viewing a single task's content
+	confirmDeleteMode                 // Confirming task deletion
+)
+
 // model represents the application state
 // In Bubble Tea, the model holds all the data your application needs
 type model struct {
@@ -28,6 +38,8 @@ type model struct {
 	configDirs  []string      // The configured task directories
 	showDirInfo bool          // Whether to show directory info for each task
 	config      DisplayConfig // Display configuration
+	mode        viewMode      // Current view mode
+	taskContent string        // Content of the task being viewed
 }
 
 // expandPath expands ~ to the user's home directory
@@ -143,6 +155,7 @@ func initialModel() model {
 			configDirs:  []string{"~/.tasks"}, // fallback
 			showDirInfo: false,
 			config:      defaultConfig().Display,
+			mode:        listMode,
 		}
 	}
 
@@ -159,8 +172,105 @@ func initialModel() model {
 		configDirs:  dirs,
 		showDirInfo: len(dirs) > 1, // Show directory info if multiple directories
 		config:      cfg.Display,
+		mode:        listMode,
 	}
-}// Init is called once when the program starts
+}
+
+// getEditor returns the user's preferred editor
+func getEditor() string {
+	// Check EDITOR environment variable
+	if editor := os.Getenv("EDITOR"); editor != "" {
+		return editor
+	}
+	// Check VISUAL environment variable
+	if editor := os.Getenv("VISUAL"); editor != "" {
+		return editor
+	}
+	// Default to vim
+	return "vim"
+}
+
+// editTask opens the current task in the user's editor
+func (m model) editTask() tea.Cmd {
+	editor := getEditor()
+	taskPath := m.tasks[m.cursor].fullPath
+
+	c := exec.Command(editor, taskPath)
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		// After editing, we could reload the task list here
+		// For now, just return to list mode
+		return tea.KeyMsg{Type: tea.KeyEsc}
+	})
+}
+
+// createTask creates a new task file and opens it in the editor
+func (m model) createTask() tea.Cmd {
+	editor := getEditor()
+
+	// Use the first configured directory for new tasks
+	firstDir, err := expandPath(m.configDirs[0])
+	if err != nil {
+		return nil
+	}
+
+	// Generate a filename based on timestamp
+	timestamp := time.Now().Format("20060102-150405")
+	filename := fmt.Sprintf("task-%s.md", timestamp)
+	taskPath := filepath.Join(firstDir, filename)
+
+	// Create a template for the new task
+	template := `---
+title: "New Task"
+status: todo
+priority: medium
+created: ` + time.Now().Format(time.RFC3339) + `
+---
+
+# New Task
+
+Write your task description here...
+`
+
+	// Write the template to the file
+	if err := os.WriteFile(taskPath, []byte(template), 0644); err != nil {
+		return nil
+	}
+
+	// Open in editor
+	c := exec.Command(editor, taskPath)
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		// Return a quit message to reload the app
+		return tea.KeyMsg{Type: tea.KeyCtrlC}
+	})
+}
+
+// deleteTask deletes the current task file after confirmation
+func (m model) deleteTask() tea.Model {
+	taskPath := m.tasks[m.cursor].fullPath
+
+	// Delete the file
+	if err := os.Remove(taskPath); err != nil {
+		m.err = fmt.Errorf("failed to delete task: %w", err)
+		m.mode = listMode
+		return m
+	}
+
+	// Remove the task from the list
+	m.tasks = append(m.tasks[:m.cursor], m.tasks[m.cursor+1:]...)
+
+	// Adjust cursor if needed
+	if m.cursor >= len(m.tasks) && m.cursor > 0 {
+		m.cursor--
+	}
+
+	// Return to list mode
+	m.mode = listMode
+	m.taskContent = ""
+
+	return m
+}
+
+// Init is called once when the program starts
 // It can return a command to run (we don't need any for now)
 func (m model) Init() tea.Cmd {
 	// No initial commands needed for this simple app
@@ -180,15 +290,64 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 
-		// Move up
+		// Navigation and actions depend on current mode
+		case "esc":
+			if m.mode == taskViewMode {
+				m.mode = listMode
+				m.taskContent = ""
+			} else if m.mode == confirmDeleteMode {
+				// Cancel deletion
+				m.mode = taskViewMode
+			}
+
+		case "enter":
+			if m.mode == listMode && len(m.tasks) > 0 {
+				// Read the task file content
+				content, err := os.ReadFile(m.tasks[m.cursor].fullPath)
+				if err != nil {
+					m.err = fmt.Errorf("failed to read task: %w", err)
+				} else {
+					m.mode = taskViewMode
+					m.taskContent = string(content)
+				}
+			}
+
+		case "e":
+			if m.mode == taskViewMode && len(m.tasks) > 0 {
+				// Edit the current task
+				return m, m.editTask()
+			}
+
+		case "n":
+			if m.mode == listMode {
+				// Create a new task
+				return m, m.createTask()
+			} else if m.mode == confirmDeleteMode {
+				// Cancel deletion
+				m.mode = taskViewMode
+			}
+
+		case "d":
+			if m.mode == taskViewMode && len(m.tasks) > 0 {
+				// Show delete confirmation
+				m.mode = confirmDeleteMode
+			}
+
+		case "y":
+			if m.mode == confirmDeleteMode && len(m.tasks) > 0 {
+				// Confirm deletion
+				return m.deleteTask(), nil
+			}
+
+		// Move up (only in list mode)
 		case "up", "k":
-			if m.cursor > 0 {
+			if m.mode == listMode && m.cursor > 0 {
 				m.cursor--
 			}
 
-		// Move down
+		// Move down (only in list mode)
 		case "down", "j":
-			if m.cursor < len(m.tasks)-1 {
+			if m.mode == listMode && m.cursor < len(m.tasks)-1 {
 				m.cursor++
 			}
 		}
@@ -201,6 +360,61 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the UI based on the current model state
 // This function is called after every Update
 func (m model) View() string {
+	// If in confirmation mode, show confirmation dialog
+	if m.mode == confirmDeleteMode {
+		return m.renderDeleteConfirmation()
+	}
+
+	// If viewing a task, show task content
+	if m.mode == taskViewMode {
+		return m.renderTaskView()
+	}
+
+	// Otherwise, show the task list
+	return m.renderListView()
+}
+
+// renderDeleteConfirmation shows a confirmation dialog for deleting a task
+func (m model) renderDeleteConfirmation() string {
+	s := "Delete Task\n"
+	s += "======================\n\n"
+
+	if m.cursor < len(m.tasks) {
+		s += fmt.Sprintf("Are you sure you want to delete this task?\n\n")
+		s += fmt.Sprintf("File: %s\n", m.tasks[m.cursor].name)
+		if m.tasks[m.cursor].metadata.Title != "" {
+			s += fmt.Sprintf("Title: %s\n", m.tasks[m.cursor].metadata.Title)
+		}
+		s += fmt.Sprintf("Path: %s\n", m.tasks[m.cursor].fullPath)
+	}
+
+	s += "\n----------------------\n"
+	s += "This action cannot be undone!\n\n"
+	s += "y: yes, delete • esc/n: cancel • q: quit\n"
+
+	return s
+}
+
+// renderTaskView displays the content of a single task
+func (m model) renderTaskView() string {
+	s := "Task Viewer\n"
+	s += "======================\n\n"
+
+	if m.cursor < len(m.tasks) {
+		s += fmt.Sprintf("File: %s\n", m.tasks[m.cursor].name)
+		s += fmt.Sprintf("Path: %s\n", m.tasks[m.cursor].fullPath)
+		s += "----------------------\n\n"
+	}
+
+	s += m.taskContent
+	s += "\n\n----------------------\n"
+	s += "esc: back • e: edit • d: delete • q: quit\n"
+
+	return s
+}
+
+// renderListView displays the list of tasks
+func (m model) renderListView() string {
 	// Build the UI string
 	var title string
 	if len(m.configDirs) == 1 {
@@ -282,7 +496,7 @@ func (m model) View() string {
 	if len(m.configDirs) > 1 {
 		s += fmt.Sprintf(" from %d directories", len(m.configDirs))
 	}
-	s += " • ↑/k up • ↓/j down • q quit\n"
+	s += " • ↑/k up • ↓/j down • enter view • n new • q quit\n"
 
 	return s
 }

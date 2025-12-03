@@ -4,16 +4,22 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 
 ## Status
 
-🚧 **Early Development** - Currently in Phase 5 Complete
+🚧 **Active Development** - Phase 6 Complete
 
 ## Features
 
-### Current (Phase 5)
+### Current (Phase 6)
 - ✅ Basic TUI interface using Bubble Tea
 - ✅ Full-screen alternate mode (like lazygit)
 - ✅ TOML configuration file support (`~/.config/taskmanager/config.toml`)
 - ✅ **Multi-directory support** - track tasks across multiple project folders
 - ✅ **Markdown frontmatter parsing** - extract rich task metadata
+- ✅ **Configurable status indicators** - customize how statuses are displayed
+- ✅ **Default status** - configure fallback status for tasks without one
+- ✅ **Task viewing** - read full task content in the TUI
+- ✅ **Task editing** - open tasks in your preferred editor ($EDITOR)
+- ✅ **Task creation** - create new tasks with template
+- ✅ **Task deletion** - remove tasks directly from the TUI
 - ✅ Status indicators (`[ ]` todo, `[~]` in-progress, `[✓]` done)
 - ✅ Priority indicators (high, med, low)
 - ✅ Display task titles from frontmatter
@@ -23,10 +29,11 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 - ✅ Keyboard navigation (↑/↓ or k/j)
 - ✅ Backward compatible with files without frontmatter
 
-### Planned
-- 🔍 Filter and search tasks
-- 📝 View and edit tasks
-- 📊 Sort by different criteria (status, priority, due date)
+### Planned (Phase 7)
+- 🔍 Search/filter functionality
+- � Multiple sort options
+- 🎨 Color theming
+- ⚡ Performance optimizations
 
 ## Installation
 
@@ -57,8 +64,20 @@ go install
 The application will display all `.md` files from your `~/.tasks` directory, sorted by modification date (newest first).
 
 ### Keyboard Controls
+
+**List View:**
+
 - `↑/k` - Move up
 - `↓/j` - Move down
+- `enter` - View task
+- `n` - Create new task
+- `q` - Quit
+
+**Task View:**
+
+- `e` - Edit task in $EDITOR
+- `d` - Delete task
+- `esc` - Back to list
 - `q` - Quit
 
 ## Configuration
@@ -93,6 +112,29 @@ When using multiple directories, the app will:
 - Load all `.md` files from all configured directories
 - Sort them by modification time (newest first)
 - Display the source directory for each task
+
+### Display Configuration
+
+Customize how tasks are displayed:
+
+```toml
+[display]
+default_status = "todo"  # Default status for tasks without one
+
+[display.status_indicators]
+todo = "[ ]"
+in-progress = "[~]"
+done = "[✓]"
+backlogged = "→"  # Add custom statuses
+```
+
+**Options:**
+
+- `default_status`: Status to use for tasks without a status field (default: "todo")
+- `status_indicators`: Map of status names to display indicators
+  - You can override built-in statuses or add your own custom ones
+  - Use any Unicode characters you like for indicators
+
 
 ## Task Files with Frontmatter
 

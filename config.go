@@ -34,7 +34,7 @@ func (c *DisplayConfig) GetStatusIndicator(status string) string {
 	if indicator, ok := c.StatusIndicators[status]; ok {
 		return indicator
 	}
-	
+
 	// Fall back to defaults
 	return getDefaultStatusIndicator(status)
 }
