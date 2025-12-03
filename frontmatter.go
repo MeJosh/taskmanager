@@ -43,13 +43,13 @@ func parseFrontmatter(filePath string) (TaskMetadata, error) {
 func getStatusEmoji(status string) string {
 	switch status {
 	case "done", "completed":
-		return "✅"
+		return "[✓]" // Checkmark for completed
 	case "in-progress", "doing":
-		return "🔄"
+		return "[~]" // Tilde for in-progress
 	case "todo":
-		return "📝"
+		return "[ ]" // Empty checkbox for not started
 	default:
-		return "  " // Two spaces for alignment
+		return "   " // Three spaces for alignment when no status
 	}
 }
 
@@ -57,11 +57,11 @@ func getStatusEmoji(status string) string {
 func getPriorityEmoji(priority string) string {
 	switch priority {
 	case "high":
-		return "🔴"
+		return "high"
 	case "medium":
-		return "🟡"
+		return "med "
 	case "low":
-		return "🟢"
+		return "low "
 	default:
 		return ""
 	}

@@ -14,8 +14,8 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 - ✅ TOML configuration file support (`~/.config/taskmanager/config.toml`)
 - ✅ **Multi-directory support** - track tasks across multiple project folders
 - ✅ **Markdown frontmatter parsing** - extract rich task metadata
-- ✅ Status indicators (✅ done, 🔄 in-progress, 📝 todo)
-- ✅ Priority indicators (🔴 high, 🟡 medium, 🟢 low)
+- ✅ Status indicators (`[ ]` todo, `[~]` in-progress, `[✓]` done)
+- ✅ Priority indicators (high, med, low)
 - ✅ Display task titles from frontmatter
 - ✅ Show source directory for each task (when using multiple directories)
 - ✅ Show last modification date for each task
@@ -117,9 +117,9 @@ Your markdown content...
 
 - **title**: Display name for the task (shown instead of filename)
 - **status**: Task status - `todo`, `in-progress`, or `done`
-  - `todo` = 📝, `in-progress` = 🔄, `done` = ✅
+  - `todo` = `[ ]`, `in-progress` = `[~]`, `done` = `[✓]`
 - **priority**: Task priority - `low`, `medium`, or `high`
-  - `low` = 🟢, `medium` = 🟡, `high` = 🔴
+  - Displays as: `low`, `med`, `high`
 - **tags**: Array of tags for categorization
 - **due_date**: When the task is due (ISO 8601 format)
 - **created**: When the task was created (ISO 8601 format)
