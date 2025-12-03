@@ -19,17 +19,20 @@ var (
 	mainBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("250")). // Lighter gray border
-			Padding(1, 2)
+			Padding(1, 2).
+			Inline(false) // Ensure box takes full width
 
 	dirBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("250")). // Lighter gray border
-			Padding(0, 1)
+			Padding(0, 1).
+			Inline(false) // Ensure box takes full width
 
 	searchBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("250")). // Lighter gray border
-			Padding(0, 1)
+			Padding(0, 1).
+			Inline(false) // Ensure box takes full width
 
 	boxTitleStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("250")). // Light gray
@@ -216,16 +219,19 @@ func embedTitleInBorder(box string, title string) string {
 	titleWithSpaces := " " + renderedTitle + " "
 
 	// Calculate how many border chars we need after title
-	charsNeeded := borderWidth - lipgloss.Width(titleWithSpaces) - 1 // -1 for the corner at start
+	// borderWidth includes: left corner (1) + content + right corner (1)
+	// We want: left corner (1) + titleWithSpaces + horizontal lines + right corner (1)
+	// So: horizontal lines = borderWidth - 1 (left corner) - titleWithSpaces - 1 (right corner)
+	charsNeeded := borderWidth - 4 - lipgloss.Width(titleWithSpaces)
 
 	// Create a style for border characters with the same color as the border
 	borderCharStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
 
 	// Construct the new top border line with styled border characters
 	// Format: ╭ [Title] ─────────╮
-	leftCorner := borderCharStyle.Render("╭")
+	leftCorner := borderCharStyle.Render(" ╭")
 	rightCorner := borderCharStyle.Render("╮")
-	horizontalLine := borderCharStyle.Render(strings.Repeat("─", charsNeeded-1))
+	horizontalLine := borderCharStyle.Render(strings.Repeat("─", charsNeeded))
 
 	lines[0] = leftCorner + titleWithSpaces + horizontalLine + rightCorner
 
@@ -1006,8 +1012,7 @@ func (m model) renderListView() string {
 		}
 		dirContent = strings.TrimRight(dirContent, "\n")
 	}
-	// dirBoxStyle has Padding(0, 1), so: content_width + padding(2) + borders(2) + margins(2) = m.width
-	// Therefore: content_width = m.width - 6
+
 	dirBox := dirBoxStyle.
 		Width(m.width - 6).
 		MarginLeft(1).
