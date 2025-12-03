@@ -4,21 +4,24 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 
 ## Status
 
-🚧 **Early Development** - Currently in Phase 1 (Basic Setup)
+🚧 **Early Development** - Currently in Phase 2 Complete
 
 ## Features
 
-### Current (Phase 1)
+### Current (Phase 2)
 - ✅ Basic TUI interface using Bubble Tea
-- ✅ Static list display
+- ✅ Full-screen alternate mode (like lazygit)
+- ✅ Load and display markdown files from `~/.tasks`
+- ✅ Show last modification date for each task
+- ✅ Automatic sorting by modification time (newest first)
+- ✅ Keyboard navigation (↑/↓ or k/j)
 
 ### Planned
-- 📋 Load and display markdown files from configured directories
+- 📋 TOML configuration file support
 - 🔍 Filter and search tasks
 - 📝 View and edit tasks
 - 🎨 Markdown frontmatter support for task metadata
 - 📂 Multi-directory support
-- ⚙️ TOML-based configuration
 
 ## Installation
 
@@ -45,6 +48,8 @@ go install
 # Run the task manager
 ./taskmanager
 ```
+
+The application will display all `.md` files from your `~/.tasks` directory, sorted by modification date (newest first).
 
 ### Keyboard Controls
 - `↑/k` - Move up

@@ -3,29 +3,89 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// taskFile represents a markdown file with its metadata
+type taskFile struct {
+	name     string    // filename
+	modTime  time.Time // last modification time
+	fullPath string    // absolute path to the file
+}
+
 // model represents the application state
 // In Bubble Tea, the model holds all the data your application needs
 type model struct {
-	tasks  []string // Our list of tasks (currently static)
-	cursor int      // Which task our cursor is pointing at
+	tasks  []taskFile // Our list of task files
+	cursor int        // Which task our cursor is pointing at
+	err    error      // Any error encountered while loading files
+}
+
+// loadTasksFromDirectory reads all .md files from the specified directory
+func loadTasksFromDirectory(dir string) ([]taskFile, error) {
+	// Expand the tilde (~) to the user's home directory
+	if dir[:2] == "~/" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("couldn't get home directory: %w", err)
+		}
+		dir = filepath.Join(homeDir, dir[2:])
+	}
+
+	// Read all files in the directory
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't read directory %s: %w", dir, err)
+	}
+
+	// Collect all .md files
+	var tasks []taskFile
+	for _, entry := range entries {
+		// Skip directories, only process files
+		if entry.IsDir() {
+			continue
+		}
+
+		// Only include .md files
+		if filepath.Ext(entry.Name()) != ".md" {
+			continue
+		}
+
+		// Get file info for modification time
+		info, err := entry.Info()
+		if err != nil {
+			// Skip files we can't read, but don't fail entirely
+			continue
+		}
+
+		tasks = append(tasks, taskFile{
+			name:     entry.Name(),
+			modTime:  info.ModTime(),
+			fullPath: filepath.Join(dir, entry.Name()),
+		})
+	}
+
+	// Sort by modification time (newest first)
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].modTime.After(tasks[j].modTime)
+	})
+
+	return tasks, nil
 }
 
 // initialModel creates the starting state of our application
 func initialModel() model {
+	// Load tasks from ~/.tasks directory
+	tasks, err := loadTasksFromDirectory("~/.tasks")
+
 	return model{
-		// Static list of tasks for Phase 1
-		tasks: []string{
-			"task1.md - Modified: 2025-12-01",
-			"task2.md - Modified: 2025-12-02",
-			"task3.md - Modified: 2025-12-03",
-			"meeting-notes.md - Modified: 2025-11-30",
-			"project-ideas.md - Modified: 2025-11-28",
-		},
+		tasks:  tasks,
 		cursor: 0, // Start at the first item
+		err:    err,
 	}
 }
 
@@ -71,8 +131,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // This function is called after every Update
 func (m model) View() string {
 	// Build the UI string
-	s := "Task Manager - Phase 1\n"
+	s := "Task Manager - ~/.tasks\n"
 	s += "======================\n\n"
+
+	// If there was an error loading tasks, display it
+	if m.err != nil {
+		s += fmt.Sprintf("Error: %v\n\n", m.err)
+		s += "Make sure the ~/.tasks directory exists.\n"
+		s += "\nPress 'q' to quit\n"
+		return s
+	}
+
+	// If no tasks found, show a helpful message
+	if len(m.tasks) == 0 {
+		s += "No markdown files found in ~/.tasks\n\n"
+		s += "Add some .md files to get started!\n"
+		s += "\nPress 'q' to quit\n"
+		return s
+	}
 
 	// Render each task in our list
 	for i, task := range m.tasks {
@@ -82,12 +158,16 @@ func (m model) View() string {
 			cursor = ">" // cursor!
 		}
 
+		// Format the modification time nicely
+		modTime := task.modTime.Format("2006-01-02 15:04")
+
 		// Render the row
-		s += fmt.Sprintf("%s %s\n", cursor, task)
+		s += fmt.Sprintf("%s %-40s  %s\n", cursor, task.name, modTime)
 	}
 
 	// Footer with instructions
 	s += "\n"
+	s += fmt.Sprintf("Showing %d tasks • ", len(m.tasks))
 	s += "↑/k up • ↓/j down • q quit\n"
 
 	return s

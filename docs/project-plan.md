@@ -32,19 +32,19 @@ A TUI (Terminal User Interface) application built with Go and Bubble Tea for man
 - Working `taskmanager` command that displays a static list
 - Basic understanding of Bubble Tea architecture
 
-### Phase 2: File System Integration
+### Phase 2: File System Integration ✅
 **Goal**: Read and display actual markdown files from a directory
 
 **Tasks**:
-- [ ] Add file system scanning functionality
-- [ ] Filter for `.md` files
-- [ ] Display actual filenames in the list
-- [ ] Show last modification date for each file
-- [ ] Handle errors gracefully (directory doesn't exist, no permissions, etc.)
+- [x] Add file system scanning functionality
+- [x] Filter for `.md` files
+- [x] Display actual filenames in the list
+- [x] Show last modification date for each file
+- [x] Handle errors gracefully (directory doesn't exist, no permissions, etc.)
 
 **Deliverables**:
-- TUI displays real markdown files from a hardcoded directory
-- Files sorted by modification date
+- TUI displays real markdown files from `~/.tasks` directory
+- Files sorted by modification date (newest first)
 
 ### Phase 3: Configuration Management
 **Goal**: Make the application configurable via TOML config file
