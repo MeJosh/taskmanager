@@ -26,6 +26,11 @@ var (
 			BorderForeground(lipgloss.Color("240")). // Light gray border
 			Padding(0, 1)
 
+	searchBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("240")). // Light gray border
+			Padding(0, 1)
+
 	boxTitleStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("250")). // Light gray
 			Bold(true).
@@ -80,10 +85,6 @@ var (
 	footerStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("243")). // Medium gray
 			Italic(true)
-
-	searchQueryStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("226")). // Yellow
-				Bold(true)
 
 	dimStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("240")) // Very dark gray
@@ -728,15 +729,21 @@ func (m model) renderTaskView() string {
 func (m model) renderListView() string {
 	var sections []string
 
-	// Build the title (only for search mode)
-	var title string
+	// Show search box if in search mode
 	if m.mode == searchMode {
+		searchContent := ""
 		if m.searchQuery == "" {
-			title = titleStyle.Render("Search (type to filter)")
+			searchContent = dimStyle.Render("Type to search tasks...")
 		} else {
-			title = titleStyle.Render("Search: ") + searchQueryStyle.Render(m.searchQuery)
+			searchContent = m.searchQuery
 		}
-		sections = append(sections, title)
+
+		searchBox := searchBoxStyle.Render(searchContent)
+		searchBoxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
+			boxTitleStyle.Render("Search"),
+			searchBox,
+		)
+		sections = append(sections, searchBoxWithTitle)
 	}
 
 	// If there was an error loading tasks, display it
@@ -880,7 +887,8 @@ func (m model) renderListView() string {
 	// Calculate total used height
 	usedHeight := 0
 	if m.mode == searchMode {
-		usedHeight += 2 // search title + margin
+		usedHeight += 1 // Search box title
+		usedHeight += 3 // Search box (content + top/bottom border)
 	}
 	usedHeight += 1            // Tasks box title
 	usedHeight += 2            // Tasks box top/bottom border
