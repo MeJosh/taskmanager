@@ -444,6 +444,68 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Is it a key press?
 	case tea.KeyMsg:
+		// In search mode, handle input differently
+		if m.mode == searchMode {
+			switch msg.String() {
+			case "esc":
+				// Exit search mode
+				m.mode = listMode
+				m.searchQuery = ""
+				m.filteredTasks = nil
+				m.cursor = 0
+
+			case "backspace":
+				if len(m.searchQuery) > 0 {
+					// Remove last character from search query
+					m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+					m.filterTasks()
+				}
+
+			case "enter":
+				if len(m.visibleTasks()) > 0 {
+					// View selected task from search results
+					visibleTasks := m.visibleTasks()
+					if m.cursor < len(visibleTasks) {
+						content, err := os.ReadFile(visibleTasks[m.cursor].fullPath)
+						if err != nil {
+							m.err = fmt.Errorf("failed to read task: %w", err)
+						} else {
+							m.mode = taskViewMode
+							m.taskContent = string(content)
+						}
+					}
+				}
+
+			case "up", "k":
+				if m.cursor > 0 {
+					m.cursor--
+				}
+
+			case "down", "j":
+				visibleTasks := m.visibleTasks()
+				if m.cursor < len(visibleTasks)-1 {
+					m.cursor++
+				}
+
+			case "?", "h":
+				// Show help screen
+				m.mode = helpMode
+
+			case "ctrl+c":
+				return m, tea.Quit
+
+			default:
+				// Add typed characters to search query
+				// Only allow printable characters
+				if len(msg.String()) == 1 {
+					m.searchQuery += msg.String()
+					m.filterTasks()
+				}
+			}
+			return m, nil
+		}
+
+		// Handle keys for other modes
 		switch msg.String() {
 
 		// Quit keys
@@ -458,19 +520,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.mode == confirmDeleteMode {
 				// Cancel deletion
 				m.mode = taskViewMode
-			} else if m.mode == searchMode {
-				// Exit search mode
-				m.mode = listMode
-				m.searchQuery = ""
-				m.filteredTasks = nil
-				m.cursor = 0
 			} else if m.mode == helpMode {
 				// Exit help mode
 				m.mode = listMode
 			}
 
 		case "?", "h":
-			if m.mode == listMode || m.mode == searchMode {
+			if m.mode == listMode {
 				// Show help screen
 				m.mode = helpMode
 			}
@@ -478,18 +534,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if m.mode == listMode && len(m.tasks) > 0 {
 				// Read the task file content
-				visibleTasks := m.visibleTasks()
-				if m.cursor < len(visibleTasks) {
-					content, err := os.ReadFile(visibleTasks[m.cursor].fullPath)
-					if err != nil {
-						m.err = fmt.Errorf("failed to read task: %w", err)
-					} else {
-						m.mode = taskViewMode
-						m.taskContent = string(content)
-					}
-				}
-			} else if m.mode == searchMode && len(m.visibleTasks()) > 0 {
-				// View selected task from search results
 				visibleTasks := m.visibleTasks()
 				if m.cursor < len(visibleTasks) {
 					content, err := os.ReadFile(visibleTasks[m.cursor].fullPath)
@@ -537,35 +581,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor = 0
 			}
 
-		case "backspace":
-			if m.mode == searchMode && len(m.searchQuery) > 0 {
-				// Remove last character from search query
-				m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
-				m.filterTasks()
-			}
-
-		// Move up (only in list or search mode)
+		// Move up (only in list mode now)
 		case "up", "k":
-			if (m.mode == listMode || m.mode == searchMode) && m.cursor > 0 {
+			if m.mode == listMode && m.cursor > 0 {
 				m.cursor--
 			}
 
-		// Move down (only in list or search mode)
+		// Move down (only in list mode now)
 		case "down", "j":
 			visibleTasks := m.visibleTasks()
-			if (m.mode == listMode || m.mode == searchMode) && m.cursor < len(visibleTasks)-1 {
+			if m.mode == listMode && m.cursor < len(visibleTasks)-1 {
 				m.cursor++
 			}
 
 		default:
-			// In search mode, add typed characters to search query
-			if m.mode == searchMode {
-				// Only allow printable characters
-				if len(msg.String()) == 1 {
-					m.searchQuery += msg.String()
-					m.filterTasks()
-				}
-			}
+			// No special handling needed for other keys
 		}
 	}
 
@@ -716,7 +746,7 @@ func (m model) renderListView() string {
 		for _, dir := range m.configDirs {
 			content += fmt.Sprintf("  - %s\n", dir)
 		}
-		
+
 		// Add box with title
 		box := mainBoxStyle.Render(content)
 		boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
@@ -735,7 +765,7 @@ func (m model) renderListView() string {
 	if len(m.tasks) == 0 {
 		content := "No markdown files found.\n\n"
 		content += "Add some .md files to get started!"
-		
+
 		// Add tasks box with title
 		box := mainBoxStyle.Render(content)
 		boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
@@ -852,12 +882,12 @@ func (m model) renderListView() string {
 	if m.mode == searchMode {
 		usedHeight += 2 // search title + margin
 	}
-	usedHeight += 1             // Tasks box title
-	usedHeight += 2             // Tasks box top/bottom border
-	usedHeight += 2             // Tasks box padding (1 top + 1 bottom)
-	usedHeight += 1             // Directories box title
-	usedHeight += dirBoxHeight  // Directories box
-	usedHeight += 1             // footer
+	usedHeight += 1            // Tasks box title
+	usedHeight += 2            // Tasks box top/bottom border
+	usedHeight += 2            // Tasks box padding (1 top + 1 bottom)
+	usedHeight += 1            // Directories box title
+	usedHeight += dirBoxHeight // Directories box
+	usedHeight += 1            // footer
 
 	// Calculate available height for task content inside the box
 	tasksBoxContentHeight := m.height - usedHeight
