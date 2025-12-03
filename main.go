@@ -36,6 +36,10 @@ var (
 			Bold(true).
 			Padding(0, 1)
 
+	searchPrefixStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("15")). // White
+				Bold(true)
+
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("15")). // White
@@ -733,12 +737,14 @@ func (m model) renderListView() string {
 	if m.mode == searchMode {
 		searchContent := ""
 		if m.searchQuery == "" {
-			searchContent = dimStyle.Render("Type to search tasks...")
+			searchContent = searchPrefixStyle.Render("/ ") + dimStyle.Render("Type to search tasks...")
 		} else {
-			searchContent = m.searchQuery
+			searchContent = searchPrefixStyle.Render("/ ") + m.searchQuery
 		}
 
-		searchBox := searchBoxStyle.Render(searchContent)
+		// Make search box full width
+		searchBoxFullWidth := searchBoxStyle.Width(m.width - 4)
+		searchBox := searchBoxFullWidth.Render(searchContent)
 		searchBoxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
 			boxTitleStyle.Render("Search"),
 			searchBox,
