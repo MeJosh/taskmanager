@@ -949,18 +949,18 @@ func (m model) renderListView() string {
 	if len(m.configDirs) > 1 {
 		dirLines = len(m.configDirs)
 	}
-	dirBoxHeight := dirLines + 2 // content + top/bottom border
+	dirBoxHeight := dirLines + 2 // content + top/bottom border (title embedded in top border)
 
 	// Calculate total used height
 	usedHeight := 0
-	usedHeight += 1 // Top padding
+	usedHeight += 1 // Top padding line
 	if m.mode == searchMode {
-		usedHeight += 3 // Search box (content + top/bottom border, title embedded)
+		usedHeight += 3 // Search box: 1 content + 2 border (title embedded)
 	}
-	usedHeight += 2            // Tasks box top/bottom border (title embedded)
-	usedHeight += 2            // Tasks box padding (1 top + 1 bottom)
-	usedHeight += dirBoxHeight // Directories box (title embedded)
-	usedHeight += 1            // footer (no extra bottom padding)
+	usedHeight += 2            // Tasks box: top/bottom border (title embedded in top)
+	usedHeight += 2            // Tasks box: internal padding (1 top + 1 bottom from Padding(1, 2))
+	usedHeight += dirBoxHeight // Directories box: dirLines + 2 border
+	usedHeight += 1            // Footer line (sits at bottom)
 
 	// Calculate available height for task content inside the box
 	tasksBoxContentHeight := m.height - usedHeight
