@@ -15,26 +15,25 @@ import (
 
 // Color styles for the UI
 var (
-	// Box and border styles - using subtle white/gray colors
+	// Box and border styles - using lighter white/gray colors
 	mainBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("240")). // Light gray border
+			BorderForeground(lipgloss.Color("250")). // Lighter gray border
 			Padding(1, 2)
 
 	dirBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("240")). // Light gray border
+			BorderForeground(lipgloss.Color("250")). // Lighter gray border
 			Padding(0, 1)
 
 	searchBoxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("240")). // Light gray border
+			BorderForeground(lipgloss.Color("250")). // Lighter gray border
 			Padding(0, 1)
 
 	boxTitleStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("250")). // Light gray
-			Bold(true).
-			Padding(0, 1)
+			Bold(true)
 
 	searchPrefixStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("15")). // White
@@ -185,6 +184,32 @@ func (m *model) filterTasks() {
 	if m.cursor >= len(m.filteredTasks) {
 		m.cursor = 0
 	}
+}
+
+// embedTitleInBorder takes a rendered box and embeds a title in its top border
+func embedTitleInBorder(box string, title string) string {
+	lines := strings.Split(box, "\n")
+	if len(lines) == 0 {
+		return box
+	}
+
+	// Format title with brackets and styling
+	formattedTitle := boxTitleStyle.Render("[" + title + "]")
+
+	// Get the top border line
+	borderLine := lines[0]
+	if len(borderLine) < 4 {
+		return box
+	}
+
+	// Insert title after the first corner character
+	// Keep the corner, add title, then continue with the border
+	titleWithSpaces := " " + formattedTitle + " "
+
+	// Build new top border: corner + title + remaining border characters
+	lines[0] = string(borderLine[0]) + titleWithSpaces + borderLine[len(titleWithSpaces)+1:]
+
+	return strings.Join(lines, "\n")
 }
 
 // expandPath expands ~ to the user's home directory
@@ -741,14 +766,9 @@ func (m model) renderListView() string {
 		// Make search box full width
 		searchBoxFullWidth := searchBoxStyle.Width(m.width - 4)
 		searchBox := searchBoxFullWidth.Render(searchContent)
-		searchBoxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
-			boxTitleStyle.Render("Search"),
-			searchBox,
-		)
-		sections = append(sections, searchBoxWithTitle)
-	}
-
-	// If there was an error loading tasks, display it
+		searchBox = embedTitleInBorder(searchBox, "Search")
+		sections = append(sections, searchBox)
+	}	// If there was an error loading tasks, display it
 	if m.err != nil {
 		content := errorStyle.Render(fmt.Sprintf("Error: %v", m.err)) + "\n\n"
 		content += "Make sure the configured directories exist:\n"
@@ -756,13 +776,10 @@ func (m model) renderListView() string {
 			content += fmt.Sprintf("  - %s\n", dir)
 		}
 
-		// Add box with title
+		// Add box with title embedded in border
 		box := mainBoxStyle.Render(content)
-		boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
-			boxTitleStyle.Render("Tasks"),
-			box,
-		)
-		sections = append(sections, boxWithTitle)
+		box = embedTitleInBorder(box, "Tasks")
+		sections = append(sections, box)
 		sections = append(sections, footerStyle.Render("q: quit"))
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}
@@ -775,25 +792,19 @@ func (m model) renderListView() string {
 		content := "No markdown files found.\n\n"
 		content += "Add some .md files to get started!"
 
-		// Add tasks box with title
+		// Add tasks box with title embedded in border
 		box := mainBoxStyle.Render(content)
-		boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
-			boxTitleStyle.Render("Tasks"),
-			box,
-		)
-		sections = append(sections, boxWithTitle)
+		box = embedTitleInBorder(box, "Tasks")
+		sections = append(sections, box)
 
-		// Directory info box with title
+		// Directory info box with title embedded in border
 		dirContent := ""
 		for _, dir := range m.configDirs {
 			dirContent += fmt.Sprintf("• %s\n", dir)
 		}
 		dirBox := dirBoxStyle.Render(strings.TrimSpace(dirContent))
-		dirBoxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
-			boxTitleStyle.Render("Directories"),
-			dirBox,
-		)
-		sections = append(sections, dirBoxWithTitle)
+		dirBox = embedTitleInBorder(dirBox, "Directories")
+		sections = append(sections, dirBox)
 
 		sections = append(sections, footerStyle.Render("q: quit"))
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -803,11 +814,8 @@ func (m model) renderListView() string {
 	if m.mode == searchMode && len(visibleTasks) == 0 {
 		content := "No tasks match your search."
 		box := mainBoxStyle.Render(content)
-		boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
-			boxTitleStyle.Render("Tasks"),
-			box,
-		)
-		sections = append(sections, boxWithTitle)
+		box = embedTitleInBorder(box, "Tasks")
+		sections = append(sections, box)
 		sections = append(sections, footerStyle.Render("esc: clear search • q: quit"))
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}
@@ -889,14 +897,11 @@ func (m model) renderListView() string {
 	// Calculate total used height
 	usedHeight := 0
 	if m.mode == searchMode {
-		usedHeight += 1 // Search box title
-		usedHeight += 3 // Search box (content + top/bottom border)
+		usedHeight += 3 // Search box (content + top/bottom border, title embedded)
 	}
-	usedHeight += 1            // Tasks box title
-	usedHeight += 2            // Tasks box top/bottom border
+	usedHeight += 2            // Tasks box top/bottom border (title embedded)
 	usedHeight += 2            // Tasks box padding (1 top + 1 bottom)
-	usedHeight += 1            // Directories box title
-	usedHeight += dirBoxHeight // Directories box
+	usedHeight += dirBoxHeight // Directories box (title embedded)
 	usedHeight += 1            // footer
 
 	// Calculate available height for task content inside the box
@@ -908,15 +913,12 @@ func (m model) renderListView() string {
 	// Set explicit height for the tasks box
 	tasksBoxStyle := mainBoxStyle.Height(tasksBoxContentHeight)
 
-	// Add the task list box with title
+	// Add the task list box with title embedded in border
 	box := tasksBoxStyle.Render(strings.TrimRight(content, "\n"))
-	boxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
-		boxTitleStyle.Render("Tasks"),
-		box,
-	)
-	sections = append(sections, boxWithTitle)
+	box = embedTitleInBorder(box, "Tasks")
+	sections = append(sections, box)
 
-	// Directory info box with title
+	// Directory info box with title embedded in border
 	dirContent := ""
 	if len(m.configDirs) == 1 {
 		dirContent = m.configDirs[0]
@@ -927,11 +929,8 @@ func (m model) renderListView() string {
 		dirContent = strings.TrimRight(dirContent, "\n")
 	}
 	dirBox := dirBoxStyle.Render(dirContent)
-	dirBoxWithTitle := lipgloss.JoinVertical(lipgloss.Left,
-		boxTitleStyle.Render("Directories"),
-		dirBox,
-	)
-	sections = append(sections, dirBoxWithTitle)
+	dirBox = embedTitleInBorder(dirBox, "Directories")
+	sections = append(sections, dirBox)
 
 	// Footer with instructions at the bottom
 	var footer string
