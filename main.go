@@ -805,8 +805,10 @@ func (m model) renderListView() string {
 		}
 
 		// Make search box full width with embedded title
+		// searchBoxStyle has Padding(0, 1), so: content_width + padding(2) + borders(2) + margins(2) = m.width
+		// Therefore: content_width = m.width - 6
 		searchBoxWithTitle := searchBoxStyle.
-			Width(m.width - 6). // Reduced from 4 to 6 for balanced padding
+			Width(m.width - 6).
 			MarginLeft(1).
 			MarginRight(1)
 
@@ -822,8 +824,10 @@ func (m model) renderListView() string {
 		}
 
 		// Add box with title embedded in border
+		// mainBoxStyle has Padding(1, 2), so: content_width + padding(4) + borders(2) + margins(2) = m.width
+		// Therefore: content_width = m.width - 8
 		box := mainBoxStyle.
-			Width(m.width - 6). // Match the width calculation of other boxes
+			Width(m.width - 8).
 			MarginLeft(1).
 			MarginRight(1).
 			Render(content)
@@ -842,8 +846,10 @@ func (m model) renderListView() string {
 		content += "Add some .md files to get started!"
 
 		// Add tasks box with title embedded in border
+		// mainBoxStyle has Padding(1, 2), so: content_width + padding(4) + borders(2) + margins(2) = m.width
+		// Therefore: content_width = m.width - 8
 		box := mainBoxStyle.
-			Width(m.width - 6). // Match the width calculation of other boxes
+			Width(m.width - 8).
 			MarginLeft(1).
 			MarginRight(1).
 			Render(content)
@@ -855,8 +861,10 @@ func (m model) renderListView() string {
 		for _, dir := range m.configDirs {
 			dirContent += fmt.Sprintf("• %s\n", dir)
 		}
+		// dirBoxStyle has Padding(0, 1), so: content_width + padding(2) + borders(2) + margins(2) = m.width
+		// Therefore: content_width = m.width - 6
 		dirBox := dirBoxStyle.
-			Width(m.width - 6). // Match the width calculation of other boxes
+			Width(m.width - 6).
 			MarginLeft(1).
 			MarginRight(1).
 			Render(strings.TrimSpace(dirContent))
@@ -870,8 +878,10 @@ func (m model) renderListView() string {
 	// If in search mode and no results
 	if m.mode == searchMode && len(visibleTasks) == 0 {
 		content := "No tasks match your search."
+		// mainBoxStyle has Padding(1, 2), so: content_width + padding(4) + borders(2) + margins(2) = m.width
+		// Therefore: content_width = m.width - 8
 		box := mainBoxStyle.
-			Width(m.width - 6). // Match the width calculation of other boxes
+			Width(m.width - 8).
 			MarginLeft(1).
 			MarginRight(1).
 			Render(content)
@@ -973,8 +983,10 @@ func (m model) renderListView() string {
 	}
 
 	// Set explicit height for the tasks box
+	// mainBoxStyle has Padding(1, 2), so: content_width + padding(4) + borders(2) + margins(2) = m.width
+	// Therefore: content_width = m.width - 8
 	tasksBoxStyle := mainBoxStyle.
-		Width(m.width - 6). // Match the width calculation of other boxes
+		Width(m.width - 8).
 		Height(tasksBoxContentHeight).
 		MarginLeft(1).
 		MarginRight(1)
@@ -994,8 +1006,10 @@ func (m model) renderListView() string {
 		}
 		dirContent = strings.TrimRight(dirContent, "\n")
 	}
+	// dirBoxStyle has Padding(0, 1), so: content_width + padding(2) + borders(2) + margins(2) = m.width
+	// Therefore: content_width = m.width - 6
 	dirBox := dirBoxStyle.
-		Width(m.width - 6). // Match the width calculation of other boxes
+		Width(m.width - 6).
 		MarginLeft(1).
 		MarginRight(1).
 		Render(dirContent)
