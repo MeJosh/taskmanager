@@ -218,9 +218,16 @@ func embedTitleInBorder(box string, title string) string {
 	// Calculate how many border chars we need after title
 	charsNeeded := borderWidth - lipgloss.Width(titleWithSpaces) - 1 // -1 for the corner at start
 
-	// Construct the new top border line
+	// Create a style for border characters with the same color as the border
+	borderCharStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
+
+	// Construct the new top border line with styled border characters
 	// Format: ╭ [Title] ─────────╮
-	lines[0] = "╭" + titleWithSpaces + strings.Repeat("─", charsNeeded-1) + "╮"
+	leftCorner := borderCharStyle.Render("╭")
+	rightCorner := borderCharStyle.Render("╮")
+	horizontalLine := borderCharStyle.Render(strings.Repeat("─", charsNeeded-1))
+	
+	lines[0] = leftCorner + titleWithSpaces + horizontalLine + rightCorner
 
 	return strings.Join(lines, "\n")
 }
