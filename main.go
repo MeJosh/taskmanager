@@ -22,11 +22,12 @@ type taskFile struct {
 // model represents the application state
 // In Bubble Tea, the model holds all the data your application needs
 type model struct {
-	tasks       []taskFile // Our list of task files
-	cursor      int        // Which task our cursor is pointing at
-	err         error      // Any error encountered while loading files
-	configDirs  []string   // The configured task directories
-	showDirInfo bool       // Whether to show directory info for each task
+	tasks       []taskFile    // Our list of task files
+	cursor      int           // Which task our cursor is pointing at
+	err         error         // Any error encountered while loading files
+	configDirs  []string      // The configured task directories
+	showDirInfo bool          // Whether to show directory info for each task
+	config      DisplayConfig // Display configuration
 }
 
 // expandPath expands ~ to the user's home directory
@@ -141,6 +142,7 @@ func initialModel() model {
 			err:         fmt.Errorf("failed to load config: %w", err),
 			configDirs:  []string{"~/.tasks"}, // fallback
 			showDirInfo: false,
+			config:      defaultConfig().Display,
 		}
 	}
 
@@ -156,6 +158,7 @@ func initialModel() model {
 		err:         loadErr,
 		configDirs:  dirs,
 		showDirInfo: len(dirs) > 1, // Show directory info if multiple directories
+		config:      cfg.Display,
 	}
 }// Init is called once when the program starts
 // It can return a command to run (we don't need any for now)
@@ -238,8 +241,14 @@ func (m model) View() string {
 			cursor = ">" // cursor!
 		}
 
-		// Status emoji (if available)
-		statusEmoji := getStatusEmoji(task.metadata.Status)
+		// Get status, using default if not set
+		status := task.metadata.Status
+		if status == "" {
+			status = m.config.GetDefaultStatus()
+		}
+
+		// Status indicator (if available)
+		statusIndicator := m.config.GetStatusIndicator(status)
 
 		// Priority emoji (if available)
 		priorityEmoji := getPriorityEmoji(task.metadata.Priority)
@@ -257,7 +266,7 @@ func (m model) View() string {
 		modTime := task.modTime.Format("2006-01-02 15:04")
 
 		// Build the row with status and priority
-		row := fmt.Sprintf("%s %s %s%-40s  %s", cursor, statusEmoji, priorityEmoji, displayName, modTime)
+		row := fmt.Sprintf("%s %s %s%-40s  %s", cursor, statusIndicator, priorityEmoji, displayName, modTime)
 
 		// If we have multiple directories, show which one this task is from
 		if m.showDirInfo {

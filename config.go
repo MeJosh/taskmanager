@@ -12,12 +12,53 @@ import (
 // Config represents the application configuration
 type Config struct {
 	TaskManager TaskManagerConfig `toml:"taskmanager"`
+	Display     DisplayConfig     `toml:"display"`
 }
 
 // TaskManagerConfig holds the task manager specific settings
 type TaskManagerConfig struct {
 	Directory   string   `toml:"directory"`   // Single directory (deprecated, use Directories)
 	Directories []string `toml:"directories"` // Multiple directories containing task markdown files
+}
+
+// DisplayConfig holds display customization settings
+type DisplayConfig struct {
+	StatusIndicators map[string]string `toml:"status_indicators"` // Custom status indicators
+	DefaultStatus    string            `toml:"default_status"`    // Default status for tasks without one
+}
+
+// GetStatusIndicator returns the indicator for a given status
+// Falls back to defaults if not configured
+func (c *DisplayConfig) GetStatusIndicator(status string) string {
+	// If custom indicator is defined, use it
+	if indicator, ok := c.StatusIndicators[status]; ok {
+		return indicator
+	}
+	
+	// Fall back to defaults
+	return getDefaultStatusIndicator(status)
+}
+
+// GetDefaultStatus returns the configured default status, or "todo" if not set
+func (c *DisplayConfig) GetDefaultStatus() string {
+	if c.DefaultStatus != "" {
+		return c.DefaultStatus
+	}
+	return "todo"
+}
+
+// getDefaultStatusIndicator returns the default indicator for a status
+func getDefaultStatusIndicator(status string) string {
+	switch status {
+	case "done", "completed":
+		return "[✓]"
+	case "in-progress", "doing":
+		return "[~]"
+	case "todo":
+		return "[ ]"
+	default:
+		return "   "
+	}
 }
 
 // GetDirectories returns all configured directories
@@ -42,6 +83,14 @@ func defaultConfig() Config {
 	return Config{
 		TaskManager: TaskManagerConfig{
 			Directories: []string{"~/.tasks"},
+		},
+		Display: DisplayConfig{
+			StatusIndicators: map[string]string{
+				"todo":        "[ ]",
+				"in-progress": "[~]",
+				"done":        "[✓]",
+			},
+			DefaultStatus: "todo",
 		},
 	}
 }
