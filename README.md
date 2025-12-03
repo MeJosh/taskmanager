@@ -4,24 +4,25 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 
 ## Status
 
-🚧 **Early Development** - Currently in Phase 2 Complete
+🚧 **Early Development** - Currently in Phase 3 Complete
 
 ## Features
 
-### Current (Phase 2)
+### Current (Phase 3)
 - ✅ Basic TUI interface using Bubble Tea
 - ✅ Full-screen alternate mode (like lazygit)
-- ✅ Load and display markdown files from `~/.tasks`
+- ✅ TOML configuration file support (`~/.config/taskmanager/config.toml`)
+- ✅ Configurable task directory
+- ✅ Load and display markdown files from configured directory
 - ✅ Show last modification date for each task
 - ✅ Automatic sorting by modification time (newest first)
 - ✅ Keyboard navigation (↑/↓ or k/j)
 
 ### Planned
-- 📋 TOML configuration file support
+- � Multi-directory support
 - 🔍 Filter and search tasks
 - 📝 View and edit tasks
 - 🎨 Markdown frontmatter support for task metadata
-- 📂 Multi-directory support
 
 ## Installation
 
@@ -58,12 +59,20 @@ The application will display all `.md` files from your `~/.tasks` directory, sor
 
 ## Configuration
 
-Configuration will be stored in `~/.config/taskmanager/config.toml` (Phase 3).
+Configuration is stored in `~/.config/taskmanager/config.toml`.
 
-Example configuration (coming soon):
+On first run, a default configuration file will be created automatically:
+
 ```toml
 [taskmanager]
-directory = "~/tasks"
+directory = "~/.tasks"
+```
+
+You can edit this file to change where your tasks are stored:
+
+```toml
+[taskmanager]
+directory = "~/Documents/my-tasks"
 ```
 
 ## Project Structure

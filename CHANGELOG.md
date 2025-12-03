@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-03
+
+### Added
+- TOML configuration file support
+- Auto-creation of config directory and default config
+- Config stored in `~/.config/taskmanager/config.toml`
+- Configurable task directory path
+- Config validation and error handling
+- Helpful error messages when config issues occur
+
+### Changed
+- Task directory is now configurable via TOML config
+- UI displays the configured directory path
+- Default directory remains `~/.tasks`
+
+### Phase 3 Complete ✅
+- Full TOML configuration management
+- User-configurable task directory
+- Auto-creation of default config on first run
+
 ## [0.2.0] - 2025-12-03
 
 ### Added

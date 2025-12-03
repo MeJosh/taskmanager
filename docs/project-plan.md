@@ -46,16 +46,16 @@ A TUI (Terminal User Interface) application built with Go and Bubble Tea for man
 - TUI displays real markdown files from `~/.tasks` directory
 - Files sorted by modification date (newest first)
 
-### Phase 3: Configuration Management
+### Phase 3: Configuration Management ✅
 **Goal**: Make the application configurable via TOML config file
 
 **Tasks**:
-- [ ] Add TOML parsing library
-- [ ] Create config structure
-- [ ] Load config from `~/.config/taskmanager/config.toml`
-- [ ] Create default config if it doesn't exist
-- [ ] Support configurable directory path
-- [ ] Add config validation
+- [x] Add TOML parsing library
+- [x] Create config structure
+- [x] Load config from `~/.config/taskmanager/config.toml`
+- [x] Create default config if it doesn't exist
+- [x] Support configurable directory path
+- [x] Add config validation
 
 **Deliverables**:
 - Configuration file support

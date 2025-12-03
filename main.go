@@ -20,9 +20,10 @@ type taskFile struct {
 // model represents the application state
 // In Bubble Tea, the model holds all the data your application needs
 type model struct {
-	tasks  []taskFile // Our list of task files
-	cursor int        // Which task our cursor is pointing at
-	err    error      // Any error encountered while loading files
+	tasks     []taskFile // Our list of task files
+	cursor    int        // Which task our cursor is pointing at
+	err       error      // Any error encountered while loading files
+	configDir string     // The configured task directory
 }
 
 // loadTasksFromDirectory reads all .md files from the specified directory
@@ -79,13 +80,25 @@ func loadTasksFromDirectory(dir string) ([]taskFile, error) {
 
 // initialModel creates the starting state of our application
 func initialModel() model {
-	// Load tasks from ~/.tasks directory
-	tasks, err := loadTasksFromDirectory("~/.tasks")
+	// Load configuration
+	cfg, err := loadConfig()
+	if err != nil {
+		return model{
+			tasks:     nil,
+			cursor:    0,
+			err:       fmt.Errorf("failed to load config: %w", err),
+			configDir: "~/.tasks", // fallback
+		}
+	}
+
+	// Load tasks from configured directory
+	tasks, loadErr := loadTasksFromDirectory(cfg.TaskManager.Directory)
 
 	return model{
-		tasks:  tasks,
-		cursor: 0, // Start at the first item
-		err:    err,
+		tasks:     tasks,
+		cursor:    0,
+		err:       loadErr,
+		configDir: cfg.TaskManager.Directory,
 	}
 }
 
@@ -131,20 +144,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // This function is called after every Update
 func (m model) View() string {
 	// Build the UI string
-	s := "Task Manager - ~/.tasks\n"
+	s := fmt.Sprintf("Task Manager - %s\n", m.configDir)
 	s += "======================\n\n"
 
 	// If there was an error loading tasks, display it
 	if m.err != nil {
 		s += fmt.Sprintf("Error: %v\n\n", m.err)
-		s += "Make sure the ~/.tasks directory exists.\n"
+		s += fmt.Sprintf("Make sure the %s directory exists.\n", m.configDir)
 		s += "\nPress 'q' to quit\n"
 		return s
 	}
 
 	// If no tasks found, show a helpful message
 	if len(m.tasks) == 0 {
-		s += "No markdown files found in ~/.tasks\n\n"
+		s += fmt.Sprintf("No markdown files found in %s\n\n", m.configDir)
 		s += "Add some .md files to get started!\n"
 		s += "\nPress 'q' to quit\n"
 		return s
