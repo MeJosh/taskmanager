@@ -823,6 +823,7 @@ func (m model) renderListView() string {
 
 		// Add box with title embedded in border
 		box := mainBoxStyle.
+			Width(m.width - 6). // Match the width calculation of other boxes
 			MarginLeft(1).
 			MarginRight(1).
 			Render(content)
@@ -842,6 +843,7 @@ func (m model) renderListView() string {
 
 		// Add tasks box with title embedded in border
 		box := mainBoxStyle.
+			Width(m.width - 6). // Match the width calculation of other boxes
 			MarginLeft(1).
 			MarginRight(1).
 			Render(content)
@@ -854,6 +856,7 @@ func (m model) renderListView() string {
 			dirContent += fmt.Sprintf("• %s\n", dir)
 		}
 		dirBox := dirBoxStyle.
+			Width(m.width - 6). // Match the width calculation of other boxes
 			MarginLeft(1).
 			MarginRight(1).
 			Render(strings.TrimSpace(dirContent))
@@ -868,6 +871,7 @@ func (m model) renderListView() string {
 	if m.mode == searchMode && len(visibleTasks) == 0 {
 		content := "No tasks match your search."
 		box := mainBoxStyle.
+			Width(m.width - 6). // Match the width calculation of other boxes
 			MarginLeft(1).
 			MarginRight(1).
 			Render(content)
@@ -970,6 +974,7 @@ func (m model) renderListView() string {
 
 	// Set explicit height for the tasks box
 	tasksBoxStyle := mainBoxStyle.
+		Width(m.width - 6). // Match the width calculation of other boxes
 		Height(tasksBoxContentHeight).
 		MarginLeft(1).
 		MarginRight(1)
@@ -990,6 +995,7 @@ func (m model) renderListView() string {
 		dirContent = strings.TrimRight(dirContent, "\n")
 	}
 	dirBox := dirBoxStyle.
+		Width(m.width - 6). // Match the width calculation of other boxes
 		MarginLeft(1).
 		MarginRight(1).
 		Render(dirContent)
