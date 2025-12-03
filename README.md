@@ -62,8 +62,7 @@ The application will display all `.md` files from your `~/.tasks` directory, sor
 ## Configuration
 
 Configuration is stored in the system's standard config directory:
-- **macOS**: `~/Library/Application Support/taskmanager/config.toml`
-- **Linux**: `~/.config/taskmanager/config.toml`
+- **macOS/Linux**: `~/.config/taskmanager/config.toml`
 - **Windows**: `%AppData%\taskmanager\config.toml`
 
 On first run, a default configuration file will be created automatically.

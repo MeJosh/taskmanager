@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/BurntSushi/toml"
 )
@@ -47,10 +48,24 @@ func defaultConfig() Config {
 
 // getConfigPath returns the path to the config file
 func getConfigPath() (string, error) {
-	// Get user's config directory (~/.config)
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("couldn't get config directory: %w", err)
+	var configDir string
+
+	// Use ~/.config on Unix-like systems (macOS and Linux)
+	// Use standard location on Windows
+	if runtime.GOOS == "windows" {
+		// On Windows, use the standard AppData location
+		dir, err := os.UserConfigDir()
+		if err != nil {
+			return "", fmt.Errorf("couldn't get config directory: %w", err)
+		}
+		configDir = dir
+	} else {
+		// On macOS and Linux, use ~/.config
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("couldn't get home directory: %w", err)
+		}
+		configDir = filepath.Join(homeDir, ".config")
 	}
 
 	// Path to our app's config directory
