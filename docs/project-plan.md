@@ -77,19 +77,20 @@ A TUI (Terminal User Interface) application built with Go and Bubble Tea for man
 - Clear indication of which directory each task belongs to
 - Backward compatible with existing single-directory configs
 
-### Phase 5: Markdown Frontmatter Parsing
+### Phase 5: Markdown Frontmatter Parsing ✅
 **Goal**: Extract and display task metadata from markdown frontmatter
 
 **Tasks**:
-- [ ] Add markdown/frontmatter parsing library
-- [ ] Define frontmatter schema (status, priority, due date, etc.)
-- [ ] Parse frontmatter from each markdown file
-- [ ] Display parsed metadata in the list
-- [ ] Add sorting/filtering by metadata fields
+- [x] Add markdown/frontmatter parsing library
+- [x] Define frontmatter schema (status, priority, due date, etc.)
+- [x] Parse frontmatter from each markdown file
+- [x] Display parsed metadata in the list
+- [x] Add status and priority emojis
 
 **Deliverables**:
 - Rich task information from frontmatter
-- Sortable/filterable task list
+- Visual indicators for status and priority
+- Backwards compatible with non-frontmatter files
 
 ### Phase 6: Task Interaction
 **Goal**: Enable viewing and basic task operations

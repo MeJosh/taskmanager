@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-12-03
+
+### Added
+- Markdown frontmatter parsing support
+- Extract metadata from task files (title, status, priority, tags, dates)
+- Status emoji indicators (✅ done, 🔄 in-progress, 📝 todo)
+- Priority emoji indicators (🔴 high, 🟡 medium, 🟢 low)
+- Display task title from frontmatter instead of filename (when available)
+- Support for custom task metadata via YAML frontmatter
+
+### Changed
+- Task display now shows status and priority emojis
+- Titles from frontmatter are used when available
+- Tasks without frontmatter still work (backwards compatible)
+
+### Phase 5 Complete ✅
+- Full frontmatter parsing and metadata extraction
+- Rich task information display
+- Backwards compatible with non-frontmatter files
+
 ## [0.4.0] - 2025-12-03
 
 ### Added

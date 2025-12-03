@@ -4,27 +4,29 @@ A beautiful terminal-based task manager built with Go and Bubble Tea. Manage you
 
 ## Status
 
-🚧 **Early Development** - Currently in Phase 4 Complete
+🚧 **Early Development** - Currently in Phase 5 Complete
 
 ## Features
 
-### Current (Phase 4)
+### Current (Phase 5)
 - ✅ Basic TUI interface using Bubble Tea
 - ✅ Full-screen alternate mode (like lazygit)
 - ✅ TOML configuration file support (`~/.config/taskmanager/config.toml`)
 - ✅ **Multi-directory support** - track tasks across multiple project folders
-- ✅ Configurable task directories (single or multiple)
-- ✅ Load and display markdown files from all configured directories
+- ✅ **Markdown frontmatter parsing** - extract rich task metadata
+- ✅ Status indicators (✅ done, 🔄 in-progress, 📝 todo)
+- ✅ Priority indicators (🔴 high, 🟡 medium, 🟢 low)
+- ✅ Display task titles from frontmatter
 - ✅ Show source directory for each task (when using multiple directories)
 - ✅ Show last modification date for each task
 - ✅ Automatic sorting by modification time (newest first)
 - ✅ Keyboard navigation (↑/↓ or k/j)
-- ✅ Backward compatible with single directory config
+- ✅ Backward compatible with files without frontmatter
 
 ### Planned
-- 🎨 Markdown frontmatter support for task metadata
 - 🔍 Filter and search tasks
 - 📝 View and edit tasks
+- 📊 Sort by different criteria (status, priority, due date)
 
 ## Installation
 
@@ -91,6 +93,38 @@ When using multiple directories, the app will:
 - Load all `.md` files from all configured directories
 - Sort them by modification time (newest first)
 - Display the source directory for each task
+
+## Task Files with Frontmatter
+
+You can add YAML frontmatter to your markdown task files to include rich metadata:
+
+```markdown
+---
+title: "Implement user authentication"
+status: "in-progress"
+priority: "high"
+tags: ["security", "backend"]
+due_date: 2025-12-31T00:00:00Z
+created: 2025-12-01T10:00:00Z
+---
+
+# Task content goes here
+
+Your markdown content...
+```
+
+### Supported Frontmatter Fields
+
+- **title**: Display name for the task (shown instead of filename)
+- **status**: Task status - `todo`, `in-progress`, or `done`
+  - `todo` = 📝, `in-progress` = 🔄, `done` = ✅
+- **priority**: Task priority - `low`, `medium`, or `high`
+  - `low` = 🟢, `medium` = 🟡, `high` = 🔴
+- **tags**: Array of tags for categorization
+- **due_date**: When the task is due (ISO 8601 format)
+- **created**: When the task was created (ISO 8601 format)
+
+Tasks without frontmatter work perfectly fine - the app is fully backwards compatible.
 
 ## Project Structure
 

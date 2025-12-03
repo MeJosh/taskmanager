@@ -12,10 +12,11 @@ import (
 
 // taskFile represents a markdown file with its metadata
 type taskFile struct {
-	name      string    // filename
-	modTime   time.Time // last modification time
-	fullPath  string    // absolute path to the file
-	sourceDir string    // which directory this task came from
+	name      string       // filename
+	modTime   time.Time    // last modification time
+	fullPath  string       // absolute path to the file
+	sourceDir string       // which directory this task came from
+	metadata  TaskMetadata // parsed frontmatter metadata
 }
 
 // model represents the application state
@@ -74,11 +75,18 @@ func loadTasksFromDirectory(dir string) ([]taskFile, error) {
 			continue
 		}
 
+		fullPath := filepath.Join(expandedDir, entry.Name())
+
+		// Parse frontmatter metadata
+		metadata, _ := parseFrontmatter(fullPath)
+		// We ignore errors here - files without frontmatter are valid
+
 		tasks = append(tasks, taskFile{
 			name:      entry.Name(),
 			modTime:   info.ModTime(),
-			fullPath:  filepath.Join(expandedDir, entry.Name()),
+			fullPath:  fullPath,
 			sourceDir: dir, // Store the original (unexpanded) directory
+			metadata:  metadata,
 		})
 	}
 
@@ -230,11 +238,26 @@ func (m model) View() string {
 			cursor = ">" // cursor!
 		}
 
+		// Status emoji (if available)
+		statusEmoji := getStatusEmoji(task.metadata.Status)
+
+		// Priority emoji (if available)
+		priorityEmoji := getPriorityEmoji(task.metadata.Priority)
+		if priorityEmoji != "" {
+			priorityEmoji = priorityEmoji + " "
+		}
+
+		// Use title from frontmatter if available, otherwise use filename
+		displayName := task.name
+		if task.metadata.Title != "" {
+			displayName = task.metadata.Title
+		}
+
 		// Format the modification time nicely
 		modTime := task.modTime.Format("2006-01-02 15:04")
 
-		// Build the row
-		row := fmt.Sprintf("%s %-40s  %s", cursor, task.name, modTime)
+		// Build the row with status and priority
+		row := fmt.Sprintf("%s %s %s%-40s  %s", cursor, statusEmoji, priorityEmoji, displayName, modTime)
 
 		// If we have multiple directories, show which one this task is from
 		if m.showDirInfo {
