@@ -92,19 +92,29 @@ A TUI (Terminal User Interface) application built with Go and Bubble Tea for man
 - Visual indicators for status and priority
 - Backwards compatible with non-frontmatter files
 
-### Phase 6: Task Interaction
+### Phase 6: Task Interaction ✅
 **Goal**: Enable viewing and basic task operations
 
 **Tasks**:
-- [ ] Implement task selection
-- [ ] View task content (full markdown)
-- [ ] Edit task (open in $EDITOR)
-- [ ] Create new task
-- [ ] Delete task (with confirmation)
+- [x] Implement task selection
+- [x] View task content (full markdown)
+- [x] Edit task (open in $EDITOR)
+- [x] Create new task
+- [x] Delete task (with confirmation)
 
 **Deliverables**:
 - Full CRUD operations on tasks
 - Integration with system editor
+- Delete confirmation dialog
+- Automatic task list reload after create/edit/delete
+- Smooth transitions between list and view modes
+
+**Notes**:
+- Tasks use $EDITOR environment variable (fallback to vim)
+- New tasks created with timestamp-based filenames
+- Template includes frontmatter with common fields
+- Delete requires 'y' confirmation to prevent accidents
+- All operations return to list view instead of quitting
 
 ### Phase 7: Advanced Features
 **Goal**: Polish and additional features
